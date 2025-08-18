@@ -3,12 +3,26 @@ import type { TaskArguments } from "hardhat/types";
 import { fhevm } from "hardhat";
 
 task("pk:store")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("platform", "平台名称")
   .addParam("password", "要存储的密码")
   .setDescription("存储密码到指定平台")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, platform, password } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
+    
+    const { platform, password } = taskArguments;
     const [signer] = await ethers.getSigners();
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -35,11 +49,25 @@ task("pk:store")
   });
 
 task("pk:get")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("platform", "平台名称")
   .setDescription("从指定平台获取密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, platform } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
+    
+    const { platform } = taskArguments;
     const [signer] = await ethers.getSigners();
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -70,10 +98,22 @@ task("pk:get")
   });
 
 task("pk:list")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .setDescription("列出用户的所有平台")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
     const [signer] = await ethers.getSigners();
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -103,11 +143,25 @@ task("pk:list")
   });
 
 task("pk:delete")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("platform", "平台名称")
   .setDescription("删除指定平台的密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, platform } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
+    
+    const { platform } = taskArguments;
     const [signer] = await ethers.getSigners();
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -135,11 +189,25 @@ task("pk:delete")
   });
 
 task("pk:batch-store")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("data", "JSON格式的平台和密码数据，例如: '[{\"platform\":\"github\",\"password\":\"pass1\"},{\"platform\":\"google\",\"password\":\"pass2\"}]'")
   .setDescription("批量存储密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, data } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
+    
+    const { data } = taskArguments;
     const [signer] = await ethers.getSigners();
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -184,11 +252,25 @@ task("pk:batch-store")
   });
 
 task("pk:convert-string")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("password", "要转换的密码字符串")
   .setDescription("将密码字符串转换为address格式")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, password } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
+    
+    const { password } = taskArguments;
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
@@ -211,10 +293,22 @@ task("pk:convert-string")
   });
 
 task("pk:info")
-  .addParam("contract", "PasswordKeeper合约地址")
+  .addOptionalParam("contract", "PasswordKeeper合约地址")
   .setDescription("显示合约信息和用户统计")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    let contractAddress = taskArguments.contract;
+    
+    // 如果没有提供合约地址，从部署信息中获取
+    if (!contractAddress) {
+      try {
+        const deployment = await deployments.get("PasswordKeeper");
+        contractAddress = deployment.address;
+        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
+      } catch (error) {
+        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
+        return;
+      }
+    }
     const [signer] = await ethers.getSigners();
     
     const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
