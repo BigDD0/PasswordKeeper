@@ -1,13 +1,14 @@
 import { task } from "hardhat/config";
 import type { TaskArguments } from "hardhat/types";
-import { fhevm } from "hardhat";
 
 task("pk:store")
   .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("platform", "平台名称")
   .addParam("password", "要存储的密码")
   .setDescription("存储密码到指定平台")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments,fhevm }) {
+    // const { fhevm } = await import("hardhat");
+    await fhevm.initializeCLIApi();
     let contractAddress = taskArguments.contract;
     
     // 如果没有提供合约地址，从部署信息中获取
@@ -33,7 +34,7 @@ task("pk:store")
     // 创建加密输入
     const input = fhevm.createEncryptedInput(contractAddress, signer.address);
     // 使用简单的哈希算法转换密码为数字
-    const passwordNum = password.length * 12345 + password.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const passwordNum = password.length * 12345 + password.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
     input.add32(passwordNum);
     const encryptedInput = await input.encrypt();
     
@@ -193,6 +194,8 @@ task("pk:batch-store")
   .addParam("data", "JSON格式的平台和密码数据，例如: '[{\"platform\":\"github\",\"password\":\"pass1\"},{\"platform\":\"google\",\"password\":\"pass2\"}]'")
   .setDescription("批量存储密码")
   .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    const { fhevm } = await import("hardhat");
+    
     let contractAddress = taskArguments.contract;
     
     // 如果没有提供合约地址，从部署信息中获取
@@ -225,7 +228,7 @@ task("pk:batch-store")
       // 准备加密输入
       for (const item of passwordData) {
         const input = fhevm.createEncryptedInput(contractAddress, signer.address);
-        const passwordNum = item.password.length * 12345 + item.password.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const passwordNum = item.password.length * 12345 + item.password.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
         input.add32(passwordNum);
         const encryptedInput = await input.encrypt();
         
