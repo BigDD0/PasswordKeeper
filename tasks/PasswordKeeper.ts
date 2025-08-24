@@ -1,389 +1,289 @@
 import { task } from "hardhat/config";
 import type { TaskArguments } from "hardhat/types";
-import { FhevmType } from "@fhevm/hardhat-plugin";
+import { PasswordConverter } from "../utils/passwordConverter";
 
-task("pk:store")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .addParam("platform", "平台名称")
-  .addParam("password", "要存储的密码")
-  .setDescription("存储密码到指定平台")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments,fhevm }) {
-    // const { fhevm } = await import("hardhat");
-    await fhevm.initializeCLIApi();
-    let contractAddress = taskArguments.contract;
+task("password-keeper:deploy")
+  .setDescription("Deploy the PasswordKeeper contract")
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    const { deploy } = deployments;
+    const [ deployer ] = await ethers.getSigners();
     
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
+    console.log("Deploying PasswordKeeper contract...");
+    const deployment = await deploy("PasswordKeeper", {
+      from: deployer.address,
+      log: true,
+    });
+    
+    console.log(`PasswordKeeper deployed to: ${deployment.address}`);
+    return deployment.address;
+  });
+
+task("password-keeper:store")
+  .setDescription("Store a password for a platform")
+  .addParam("contract", "The deployed contract address")
+  .addParam("platform", "The platform name")
+  .addParam("password", "The password to store (max 20 characters)")
+  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm }) {
+    const { contract: contractAddress, platform, password } = taskArguments;
+    
+    if (password.length > 20) {
+      throw new Error("Password cannot be longer than 20 characters");
     }
     
-    const { platform, password } = taskArguments;
     const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
+    console.log(`Storing password for platform: ${platform}`);
+    console.log(`Signer address: ${signer.address}`);
     
-    console.log(`存储密码到平台: ${platform}`);
-    console.log(`使用账户: ${signer.address}`);
+    // Convert password to address off-chain
+    const passwordAddress = PasswordConverter.stringToAddress(password);
+    console.log(`Password converted to address: ${passwordAddress}`);
     
-    // 创建加密输入
+    // Create encrypted input
     const input = fhevm.createEncryptedInput(contractAddress, signer.address);
-    
-    // 将密码字符串直接转换为数字进行FHE加密
-    // 1. 先转换为bytes32格式
-    const passwordBytes32 = ethers.encodeBytes32String(password);
-    console.log(`🔤 密码Bytes32格式: ${passwordBytes32}`);
-    
-    // 2. 将bytes32转换为数字 (取前4字节作为32位数字)
-    const passwordNum = parseInt(passwordBytes32.slice(2, 10), 16); // 取前4字节
-    console.log(`🔢 密码数字格式: ${passwordNum}`);
-    
-    input.add32(passwordNum);
+    input.addAddress(passwordAddress);
     const encryptedInput = await input.encrypt();
     
-    // 存储密码
-    const tx = await passwordKeeper.storePassword(
+    // Store the password
+    const tx = await contract.connect(signer).storePassword(
       platform,
       encryptedInput.handles[0],
       encryptedInput.inputProof
     );
     
     const receipt = await tx.wait();
-    console.log(`✅ 密码已存储! 交易hash: ${receipt?.hash}`);
+    console.log(`Password stored successfully! Transaction hash: ${receipt.hash}`);
   });
 
-task("pk:get")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .addParam("platform", "平台名称")
-  .setDescription("从指定平台获取并解密密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments, fhevm }) {
-    await fhevm.initializeCLIApi();
+task("password-keeper:update")
+  .setDescription("Update a password for a platform")
+  .addParam("contract", "The deployed contract address")
+  .addParam("platform", "The platform name")
+  .addParam("password", "The new password (max 20 characters)")
+  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm }) {
+    const { contract: contractAddress, platform, password } = taskArguments;
     
-    let contractAddress = taskArguments.contract;
-    
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
+    if (password.length > 20) {
+      throw new Error("Password cannot be longer than 20 characters");
     }
     
-    const { platform } = taskArguments;
     const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
+    console.log(`Updating password for platform: ${platform}`);
     
-    console.log(`从平台获取密码: ${platform}`);
-    console.log(`使用账户: ${signer.address}`);
+    // Convert password to address off-chain
+    const passwordAddress = PasswordConverter.stringToAddress(password);
+    console.log(`New password converted to address: ${passwordAddress}`);
+    
+    // Create encrypted input
+    const input = fhevm.createEncryptedInput(contractAddress, signer.address);
+    input.addAddress(passwordAddress);
+    const encryptedInput = await input.encrypt();
+    
+    // Update the password
+    const tx = await contract.connect(signer).updatePassword(
+      platform,
+      encryptedInput.handles[0],
+      encryptedInput.inputProof
+    );
+    
+    const receipt = await tx.wait();
+    console.log(`Password updated successfully! Transaction hash: ${receipt.hash}`);
+  });
+
+task("password-keeper:get")
+  .setDescription("Get an encrypted password for a platform")
+  .addParam("contract", "The deployed contract address")
+  .addParam("platform", "The platform name")
+  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
+    const { contract: contractAddress, platform } = taskArguments;
+    
+    const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
+    
+    console.log(`Getting encrypted password for platform: ${platform}`);
     
     try {
-      // 检查密码是否存在
-      const exists = await passwordKeeper.hasPassword(platform);
-      if (!exists) {
-        console.log(`❌ 平台 ${platform} 没有存储密码`);
-        return;
-      }
+      const encryptedPassword = await contract.connect(signer).getPassword(platform);
+      console.log(`Encrypted password handle: ${encryptedPassword}`);
+      console.log("Note: This is the encrypted handle. To decrypt, you need to use the relayer SDK.");
       
-      // 获取加密密码
-      const encryptedPassword = await passwordKeeper.getPassword(platform);
-      console.log(`✅ 获取到加密密码句柄: ${encryptedPassword}`);
-      
-      // 使用Hardhat FHEVM插件进行用户解密
-      console.log(`🔓 正在解密密码...`);
-      try {
-        const decryptedPasswordNum = await fhevm.userDecryptEuint(
-          FhevmType.euint32,
-          encryptedPassword,
-          contractAddress,
-          signer
-        );
-        console.log(`🔢 解密后的数字: ${decryptedPasswordNum}`);
-        
-        // 将数字转换回bytes32格式
-        const hexString = decryptedPasswordNum.toString(16).padStart(8, '0');
-        const paddedHex = '0x' + hexString.padEnd(64, '0'); // 填充到64位
-        console.log(`🔤 转换为Bytes32: ${paddedHex}`);
-        
-        // 从bytes32解码回原始字符串
-        try {
-          const originalPassword = ethers.decodeBytes32String(paddedHex);
-          console.log(`🔓 解密后的原始密码: "${originalPassword}"`);
-        } catch (decodeError) {
-          console.log(`⚠️  字符串解码失败，可能包含特殊字符`);
-          console.log(`🔢 原始数字值: ${decryptedPasswordNum}`);
-        }
-        
-      } catch (decryptError) {
-        console.error(`❌ 解密失败:`, decryptError);
-        console.log(`⚠️  可能的原因:`);
-        console.log(`   - 没有解密权限 (需要在合约中调用FHE.allow)`);
-        console.log(`   - FHEVM环境未正确配置`);
-        console.log(`   - 网络配置问题`);
-        
-        // 显示原始加密句柄信息
-        console.log(`ℹ️  加密句柄信息: ${encryptedPassword}`);
-      }
-      
-      // 获取时间戳
-      const timestamp = await passwordKeeper.getPasswordTimestamp(platform);
-      const date = new Date(Number(timestamp) * 1000);
-      console.log(`📅 存储时间: ${date.toLocaleString()}`);
-      
-    } catch (error) {
-      console.error(`❌ 获取密码失败:`, error);
+      const timestamp = await contract.connect(signer).getPasswordTimestamp(platform);
+      console.log(`Password was stored/updated at: ${new Date(Number(timestamp) * 1000).toISOString()}`);
+    } catch {
+      console.log("Password not found for this platform.");
     }
   });
 
-task("pk:list")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .setDescription("列出用户的所有平台")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
-    let contractAddress = taskArguments.contract;
+task("password-keeper:has")
+  .setDescription("Check if a password exists for a platform")
+  .addParam("contract", "The deployed contract address")
+  .addParam("platform", "The platform name")
+  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
+    const { contract: contractAddress, platform } = taskArguments;
     
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
-    }
     const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
+    const hasPassword = await contract.connect(signer).hasPassword(platform);
+    console.log(`Password exists for ${platform}: ${hasPassword}`);
+  });
+
+task("password-keeper:list")
+  .setDescription("List all platforms for the current user")
+  .addParam("contract", "The deployed contract address")
+  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
+    const { contract: contractAddress } = taskArguments;
     
-    console.log(`获取用户平台列表: ${signer.address}`);
+    const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    try {
-      const platforms = await passwordKeeper.getUserPlatforms();
-      const count = await passwordKeeper.getPasswordCount();
-      
-      console.log(`📋 总计 ${count} 个平台:`);
-      
-      if (platforms.length === 0) {
-        console.log("  (暂无存储的密码)");
-      } else {
-        for (let i = 0; i < platforms.length; i++) {
-          const platform = platforms[i];
-          const timestamp = await passwordKeeper.getPasswordTimestamp(platform);
-          const date = new Date(Number(timestamp) * 1000);
-          console.log(`  ${i + 1}. ${platform} (${date.toLocaleString()})`);
-        }
+    console.log(`Listing platforms for user: ${signer.address}`);
+    
+    const platforms = await contract.connect(signer).getUserPlatforms();
+    const platformCount = await contract.connect(signer).getPlatformCount();
+    
+    console.log(`Total platforms: ${platformCount}`);
+    
+    if (platforms.length === 0) {
+      console.log("No platforms found.");
+    } else {
+      console.log("Platforms:");
+      for (let i = 0; i < platforms.length; i++) {
+        const timestamp = await contract.connect(signer).getPasswordTimestamp(platforms[i]);
+        console.log(`  ${i + 1}. ${platforms[i]} (stored: ${new Date(Number(timestamp) * 1000).toISOString()})`);
       }
-      
-    } catch (error) {
-      console.error(`❌ 获取平台列表失败:`, error);
     }
   });
 
-task("pk:delete")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .addParam("platform", "平台名称")
-  .setDescription("删除指定平台的密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
-    let contractAddress = taskArguments.contract;
+task("password-keeper:delete")
+  .setDescription("Delete a password for a platform")
+  .addParam("contract", "The deployed contract address")
+  .addParam("platform", "The platform name")
+  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
+    const { contract: contractAddress, platform } = taskArguments;
     
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
-    }
-    
-    const { platform } = taskArguments;
     const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
-    
-    console.log(`删除平台密码: ${platform}`);
-    console.log(`使用账户: ${signer.address}`);
+    console.log(`Deleting password for platform: ${platform}`);
     
     try {
-      // 检查密码是否存在
-      const exists = await passwordKeeper.hasPassword(platform);
-      if (!exists) {
-        console.log(`❌ 平台 ${platform} 没有存储密码`);
-        return;
-      }
-      
-      // 删除密码
-      const tx = await passwordKeeper.deletePassword(platform);
+      const tx = await contract.connect(signer).deletePassword(platform);
       const receipt = await tx.wait();
-      
-      console.log(`✅ 密码已删除! 交易hash: ${receipt?.hash}`);
-      
+      console.log(`Password deleted successfully! Transaction hash: ${receipt.hash}`);
     } catch (error) {
-      console.error(`❌ 删除密码失败:`, error);
+      console.log("Password not found for this platform or deletion failed.");
+      console.error(error);
     }
   });
 
-task("pk:batch-store")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .addParam("data", "JSON格式的平台和密码数据，例如: '[{\"platform\":\"github\",\"password\":\"pass1\"},{\"platform\":\"google\",\"password\":\"pass2\"}]'")
-  .setDescription("批量存储密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
-    const { fhevm } = await import("hardhat");
-    
-    let contractAddress = taskArguments.contract;
-    
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
-    }
-    
-    const { data } = taskArguments;
-    const [signer] = await ethers.getSigners();
-    
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
-    
-    try {
-      const passwordData = JSON.parse(data);
-      
-      console.log(`批量存储 ${passwordData.length} 个密码`);
-      console.log(`使用账户: ${signer.address}`);
-      
-      const platforms = [];
-      const handles = [];
-      const proofs = [];
-      
-      // 准备加密输入
-      for (const item of passwordData) {
-        const input = fhevm.createEncryptedInput(contractAddress, signer.address);
-        const passwordNum = item.password.length * 12345 + item.password.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-        input.add32(passwordNum);
-        const encryptedInput = await input.encrypt();
-        
-        platforms.push(item.platform);
-        handles.push(encryptedInput.handles[0]);
-        proofs.push(encryptedInput.inputProof);
-      }
-      
-      // 批量存储
-      const tx = await passwordKeeper.batchStorePasswords(platforms, handles, proofs);
-      const receipt = await tx.wait();
-      
-      console.log(`✅ ${passwordData.length} 个密码批量存储完成! 交易hash: ${receipt?.hash}`);
-      
-      // 显示存储的平台
-      console.log(`📋 存储的平台:`);
-      platforms.forEach((platform, index) => {
-        console.log(`  ${index + 1}. ${platform}`);
-      });
-      
-    } catch (error) {
-      console.error(`❌ 批量存储失败:`, error);
-    }
-  });
-
-task("pk:convert-string")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .addParam("password", "要转换的密码字符串")
-  .setDescription("将密码字符串转换为address格式")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
-    let contractAddress = taskArguments.contract;
-    
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
-    }
-    
+task("password-keeper:convert-to-address")
+  .setDescription("Convert a password string to an EVM address (off-chain utility)")
+  .addParam("password", "The password to convert (max 20 characters)")
+  .setAction(async function (taskArguments: TaskArguments) {
     const { password } = taskArguments;
     
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
-    
     try {
-      const passwordBytes = ethers.encodeBytes32String(password);
-      const addressFormat = await passwordKeeper.stringToAddress(passwordBytes);
-      
-      console.log(`原始密码: ${password}`);
-      console.log(`Bytes32格式: ${passwordBytes}`);
-      console.log(`Address格式: ${addressFormat}`);
-      
-      // 验证转换回来
-      const convertedBack = await passwordKeeper.addressToString(addressFormat);
-      console.log(`转换回Bytes32: ${convertedBack}`);
-      console.log(`转换回字符串: ${ethers.decodeBytes32String(convertedBack)}`);
-      
+      const address = PasswordConverter.stringToAddress(password);
+      console.log(`Password "${password}" converts to address: ${address}`);
     } catch (error) {
-      console.error(`❌ 转换失败:`, error);
+      console.error("Conversion failed:", error);
     }
   });
 
-task("pk:info")
-  .addOptionalParam("contract", "PasswordKeeper合约地址")
-  .setDescription("显示合约信息和用户统计")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
-    let contractAddress = taskArguments.contract;
-    
-    // 如果没有提供合约地址，从部署信息中获取
-    if (!contractAddress) {
-      try {
-        const deployment = await deployments.get("PasswordKeeper");
-        contractAddress = deployment.address;
-        console.log(`🔗 自动使用部署的合约地址: ${contractAddress}`);
-      } catch (error) {
-        console.error("❌ 无法获取部署的合约地址，请使用 --contract 参数指定");
-        return;
-      }
-    }
-    const [signer] = await ethers.getSigners();
-    
-    const passwordKeeper = await ethers.getContractAt("PasswordKeeper", contractAddress);
+task("password-keeper:convert-to-string")
+  .setDescription("Convert an EVM address back to password string (off-chain utility)")
+  .addParam("address", "The address to convert back to password")
+  .setAction(async function (taskArguments: TaskArguments) {
+    const { address } = taskArguments;
     
     try {
-      console.log(`📊 PasswordKeeper 合约信息`);
-      console.log(`合约地址: ${contractAddress}`);
-      console.log(`当前用户: ${signer.address}`);
-      console.log(`网络: ${(await ethers.provider.getNetwork()).name}`);
-      
-      const count = await passwordKeeper.getPasswordCount();
-      console.log(`存储密码数量: ${count}`);
-      
-      if (count > 0) {
-        const platforms = await passwordKeeper.getUserPlatforms();
-        console.log(`\n📋 存储的平台:`);
-        for (let i = 0; i < platforms.length; i++) {
-          const platform = platforms[i];
-          const timestamp = await passwordKeeper.getPasswordTimestamp(platform);
-          const date = new Date(Number(timestamp) * 1000);
-          console.log(`  ${i + 1}. ${platform} (${date.toLocaleDateString()})`);
-        }
-      }
-      
+      const password = PasswordConverter.addressToString(address);
+      console.log(`Address "${address}" converts back to password: "${password}"`);
     } catch (error) {
-      console.error(`❌ 获取信息失败:`, error);
+      console.error("Conversion failed:", error);
     }
+  });
+
+task("password-keeper:demo")
+  .setDescription("Run a demo of the PasswordKeeper functionality")
+  .addParam("contract", "The deployed contract address")
+  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm }) {
+    const { contract: contractAddress } = taskArguments;
+    
+    const [signer] = await ethers.getSigners();
+    const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
+    
+    console.log("🔐 PasswordKeeper Demo");
+    console.log("====================");
+    console.log(`Using account: ${signer.address}`);
+    console.log(`Contract: ${contractAddress}\n`);
+    
+    const platforms = ["github", "google", "twitter"];
+    const passwords = ["myGitHub123", "g00gl3Pass", "tw1tter!"];
+    
+    // Store passwords
+    console.log("📝 Storing passwords for demo platforms...");
+    for (let i = 0; i < platforms.length; i++) {
+      console.log(`Storing password for ${platforms[i]}...`);
+      
+      const passwordAddress = PasswordConverter.stringToAddress(passwords[i]);
+      const input = fhevm.createEncryptedInput(contractAddress, signer.address);
+      input.addAddress(passwordAddress);
+      const encryptedInput = await input.encrypt();
+      
+      const tx = await contract.connect(signer).storePassword(
+        platforms[i],
+        encryptedInput.handles[0],
+        encryptedInput.inputProof
+      );
+      await tx.wait();
+      console.log(`✅ Stored password for ${platforms[i]}`);
+    }
+    
+    console.log("\n📋 Listing all stored passwords...");
+    const storedPlatforms = await contract.connect(signer).getUserPlatforms();
+    const platformCount = await contract.connect(signer).getPlatformCount();
+    
+    console.log(`Total platforms: ${platformCount}`);
+    for (const platform of storedPlatforms) {
+      const hasPassword = await contract.connect(signer).hasPassword(platform);
+      const timestamp = await contract.connect(signer).getPasswordTimestamp(platform);
+      console.log(`  ✓ ${platform} (stored: ${new Date(Number(timestamp) * 1000).toISOString()}, exists: ${hasPassword})`);
+    }
+    
+    console.log("\n🔄 Updating password for github...");
+    const newPassword = "newGitHub456";
+    const newPasswordAddress = PasswordConverter.stringToAddress(newPassword);
+    const updateInput = fhevm.createEncryptedInput(contractAddress, signer.address);
+    updateInput.addAddress(newPasswordAddress);
+    const updateEncryptedInput = await updateInput.encrypt();
+    
+    const updateTx = await contract.connect(signer).updatePassword(
+      "github",
+      updateEncryptedInput.handles[0],
+      updateEncryptedInput.inputProof
+    );
+    await updateTx.wait();
+    console.log("✅ Updated password for github");
+    
+    console.log("\n🗑️  Deleting password for twitter...");
+    const deleteTx = await contract.connect(signer).deletePassword("twitter");
+    await deleteTx.wait();
+    console.log("✅ Deleted password for twitter");
+    
+    console.log("\n📋 Final platform list...");
+    const finalPlatforms = await contract.connect(signer).getUserPlatforms();
+    const finalCount = await contract.connect(signer).getPlatformCount();
+    
+    console.log(`Total platforms: ${finalCount}`);
+    for (const platform of finalPlatforms) {
+      const timestamp = await contract.connect(signer).getPasswordTimestamp(platform);
+      console.log(`  ✓ ${platform} (updated: ${new Date(Number(timestamp) * 1000).toISOString()})`);
+    }
+    
+    console.log("\n🎉 Demo completed successfully!");
   });
