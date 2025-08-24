@@ -23,7 +23,6 @@ contract PasswordKeeper is SepoliaConfig {
     
     // Events
     event PasswordStored(address indexed user, string indexed platform, uint256 timestamp);
-    event PasswordRetrieved(address indexed user, string indexed platform, uint256 timestamp);
     
     /// @notice Store an encrypted password for a platform
     /// @param platform The platform name (max length 50 characters)
@@ -63,40 +62,44 @@ contract PasswordKeeper is SepoliaConfig {
     }
     
     /// @notice Retrieve an encrypted password for a platform
+    /// @param user The user address
     /// @param platform The platform name
     /// @return The encrypted password address (can be decrypted off-chain by the user)
-    function getPassword(string calldata platform) external returns (eaddress) {
-        require(userPasswords[msg.sender][platform].exists, "Password not found for this platform");
+    function getPassword(address user, string calldata platform) external view returns (eaddress) {
+        require(userPasswords[user][platform].exists, "Password not found for this platform");
         
-        emit PasswordRetrieved(msg.sender, platform, block.timestamp);
-        return userPasswords[msg.sender][platform].encryptedPasswordAddress;
+        return userPasswords[user][platform].encryptedPasswordAddress;
     }
     
     /// @notice Check if a password exists for a platform
+    /// @param user The user address
     /// @param platform The platform name
     /// @return True if password exists, false otherwise
-    function hasPassword(string calldata platform) external view returns (bool) {
-        return userPasswords[msg.sender][platform].exists;
+    function hasPassword(address user, string calldata platform) external view returns (bool) {
+        return userPasswords[user][platform].exists;
     }
     
     /// @notice Get the creation timestamp of a password
+    /// @param user The user address
     /// @param platform The platform name
     /// @return The timestamp when the password was created/last updated
-    function getPasswordTimestamp(string calldata platform) external view returns (uint256) {
-        require(userPasswords[msg.sender][platform].exists, "Password not found for this platform");
-        return userPasswords[msg.sender][platform].createdAt;
+    function getPasswordTimestamp(address user, string calldata platform) external view returns (uint256) {
+        require(userPasswords[user][platform].exists, "Password not found for this platform");
+        return userPasswords[user][platform].createdAt;
     }
     
     /// @notice Get all platforms for which the user has stored passwords
+    /// @param user The user address
     /// @return Array of platform names
-    function getUserPlatforms() external view returns (string[] memory) {
-        return userPlatforms[msg.sender];
+    function getUserPlatforms(address user) external view returns (string[] memory) {
+        return userPlatforms[user];
     }
     
     /// @notice Get the number of platforms for which the user has stored passwords
+    /// @param user The user address
     /// @return Number of platforms
-    function getPlatformCount() external view returns (uint256) {
-        return userPlatforms[msg.sender].length;
+    function getPlatformCount(address user) external view returns (uint256) {
+        return userPlatforms[user].length;
     }
     
     /// @notice Update an existing password for a platform
