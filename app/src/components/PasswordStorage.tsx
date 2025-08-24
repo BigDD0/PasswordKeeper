@@ -40,7 +40,7 @@ export const PasswordStorage: React.FC = () => {
     
     if (hash && !transactionLoading && !isLoading) {
       console.log('✅ [PasswordStorage] Transaction completed successfully!');
-      setMessage('密码存储成功！');
+      setMessage('Password stored successfully!');
       setPlatform('');
       setPassword('');
       setIsLoading(false);
@@ -63,25 +63,25 @@ export const PasswordStorage: React.FC = () => {
     
     if (!address) {
       console.log('❌ [PasswordStorage] No wallet address');
-      setMessage('请先连接钱包');
+      setMessage('Please connect your wallet first');
       return;
     }
 
     if (!isInitialized) {
       console.log('❌ [PasswordStorage] FHE not initialized');
-      setMessage('请先初始化 FHE');
+      setMessage('Please initialize FHE first');
       return;
     }
 
     if (!platform.trim()) {
       console.log('❌ [PasswordStorage] No platform name');
-      setMessage('请输入平台名');
+      setMessage('Please enter platform name');
       return;
     }
 
     if (!password.trim()) {
       console.log('❌ [PasswordStorage] No password');
-      setMessage('请输入密码');
+      setMessage('Please enter password');
       return;
     }
 
@@ -93,7 +93,7 @@ export const PasswordStorage: React.FC = () => {
       console.log('✅ [PasswordStorage] Password validation passed');
       
       setIsLoading(true);
-      setMessage('正在处理...');
+      setMessage('Processing...');
 
       // 1. 将密码转换为地址格式
       console.log('🔄 [PasswordStorage] Step 1: Converting password to address format');
@@ -135,7 +135,7 @@ export const PasswordStorage: React.FC = () => {
         stack: error.stack,
         name: error.name
       });
-      setMessage(error.message || '存储失败');
+      setMessage(error.message || 'Storage failed');
       setIsLoading(false);
     }
   };
@@ -144,19 +144,19 @@ export const PasswordStorage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px' }}>
-      <h2>存储密码</h2>
+      <h2>Store Password</h2>
       
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>
           <label htmlFor="platform" style={{ display: 'block', marginBottom: '5px' }}>
-            平台名称:
+            Platform Name:
           </label>
           <input
             type="text"
             id="platform"
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            placeholder="例如：Github, Gmail"
+            placeholder="e.g: Github, Gmail"
             maxLength={50}
             style={{
               width: '100%',

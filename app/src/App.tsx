@@ -114,7 +114,7 @@ const AppContent: React.FC = () => {
                   transition: 'all 0.2s'
                 }}
               >
-                存储密码
+                Store Password
               </button>
               <button
                 onClick={() => setActiveTab('retrieve')}
@@ -130,7 +130,7 @@ const AppContent: React.FC = () => {
                   transition: 'all 0.2s'
                 }}
               >
-                获取密码
+                Retrieve Password
               </button>
             </div>
 
@@ -152,13 +152,13 @@ const AppContent: React.FC = () => {
               borderRadius: '8px',
               color: '#495057'
             }}>
-              <h3 style={{ marginTop: 0 }}>功能说明</h3>
+              <h3 style={{ marginTop: 0 }}>Features</h3>
               <ul style={{ paddingLeft: '1.5rem' }}>
-                <li>密码使用 Zama FHE 技术进行同态加密存储在区块链上</li>
-                <li>密码长度限制为20字符</li>
-                <li>密码在链下转换为地址格式，然后加密存储</li>
-                <li>只有密码拥有者可以解密和查看密码</li>
-                <li>支持多平台密码管理</li>
+                <li>Passwords are encrypted using Zama FHE technology and stored on blockchain</li>
+                <li>Password length is limited to 20 characters</li>
+                <li>Passwords are converted to address format off-chain, then encrypted and stored</li>
+                <li>Only the password owner can decrypt and view passwords</li>
+                <li>Supports multi-platform password management</li>
               </ul>
             </div>
           </>
@@ -170,12 +170,12 @@ const AppContent: React.FC = () => {
             borderRadius: '8px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
-            <h2>欢迎使用 Password Keeper</h2>
+            <h2>Welcome to Password Keeper</h2>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
-              基于 Zama FHE 技术的去中心化密码管理器
+              Decentralized password manager based on Zama FHE technology
             </p>
             <p style={{ color: '#666' }}>
-              请连接您的钱包开始使用
+              Please connect your wallet to get started
             </p>
           </div>
         )}
@@ -189,7 +189,7 @@ const AppContent: React.FC = () => {
         color: '#666',
         borderTop: '1px solid #dee2e6'
       }}>
-        <p>基于 Zama FHEVM 构建 | 密码安全存储在区块链上</p>
+        <p>Built on Zama FHEVM | Passwords securely stored on blockchain</p>
       </div>
     </div>
   );
