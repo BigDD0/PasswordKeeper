@@ -53,28 +53,9 @@ export const PasswordRetrieval: React.FC = () => {
     }
   }, [userPlatforms]);
 
-  // 获取特定平台的加密密码
-  const getEncryptedPasswordForPlatform = async (platform: string) => {
-    if (!address) return null;
-    
-    try {
-      // 直接调用合约获取加密密码
-      const contract = {
-        ...CONTRACT_CONFIG,
-        functionName: 'getPassword' as const,
-        args: [address as `0x${string}`, platform] as const,
-      };
-      
-      // 这里我们需要动态调用，但由于useReadContract的限制，我们改用不同的方法
-      return null; // 临时返回，下面会修改实现方式
-    } catch (error) {
-      console.error('Error fetching encrypted password:', error);
-      return null;
-    }
-  };
 
-  const handleDecrypt = async () => {
-    if (!address || !signer || !encryptedPassword || !selectedPlatform) {
+  const handleDecrypt = async (platform: string) => {
+    if (!address || !signer) {
       setMessage('缺少必要信息');
       return;
     }
@@ -84,136 +65,174 @@ export const PasswordRetrieval: React.FC = () => {
       return;
     }
 
+    // 更新特定平台的解密状态
+    setPlatformPasswords(prev => 
+      prev.map(p => 
+        p.platform === platform 
+          ? { ...p, isDecrypting: true }
+          : p
+      )
+    );
+
     try {
-      setIsDecrypting(true);
       setMessage('正在解密...');
 
-      // 1. 使用 Zama 解密获得地址
+      // 1. 使用 viem/wagmi 直接调用合约获取加密密码
+      const { readContract } = await import('viem/actions');
+      const { createPublicClient, http } = await import('viem');
+      const { sepolia } = await import('viem/chains');
+      
+      const client = createPublicClient({
+        chain: sepolia,
+        transport: http()
+      });
+
+      const encryptedPassword = await readContract(client, {
+        address: CONTRACT_CONFIG.address as `0x${string}`,
+        abi: CONTRACT_CONFIG.abi,
+        functionName: 'getPassword',
+        args: [address as `0x${string}`, platform],
+      });
+
+      console.log('Encrypted password retrieved:', encryptedPassword);
+
+      // 2. 使用 Zama 解密获得地址
       const decryptedAddress = await decryptData(
-        encryptedPassword,
+        encryptedPassword as string,
         CONTRACT_CONFIG.address,
         address,
         signer
       );
 
-      // 2. 将地址转换回密码字符串
+      // 3. 将地址转换回密码字符串
       const password = PasswordConverter.addressToString(decryptedAddress);
       
-      setDecryptedPassword(password);
+      // 更新特定平台的密码状态
+      setPlatformPasswords(prev => 
+        prev.map(p => 
+          p.platform === platform 
+            ? { ...p, decryptedPassword: password, isDecrypting: false, encryptedPassword: encryptedPassword as string }
+            : p
+        )
+      );
+
       setMessage('解密成功！');
     } catch (error: any) {
       console.error('Decryption error:', error);
       setMessage(error.message || '解密失败');
-    } finally {
-      setIsDecrypting(false);
+      
+      // 重置特定平台的解密状态
+      setPlatformPasswords(prev => 
+        prev.map(p => 
+          p.platform === platform 
+            ? { ...p, isDecrypting: false }
+            : p
+        )
+      );
     }
   };
 
-  const handleCopyPassword = () => {
-    if (decryptedPassword) {
-      navigator.clipboard.writeText(decryptedPassword);
-      setMessage('密码已复制到剪贴板');
-    }
+  const handleCopyPassword = (password: string) => {
+    navigator.clipboard.writeText(password);
+    setMessage('密码已复制到剪贴板');
   };
 
-  const loading = isDecrypting || fheLoading;
+  const loading = fheLoading;
 
   return (
-    <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px' }}>
+    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px' }}>
       <h2>获取密码</h2>
 
       {!address ? (
         <p>请先连接钱包</p>
       ) : (
         <>
-          <div style={{ marginBottom: '15px' }}>
-            <label htmlFor="platform" style={{ display: 'block', marginBottom: '5px' }}>
-              选择平台:
-            </label>
-            <select
-              id="platform"
-              value={selectedPlatform}
-              onChange={(e) => setSelectedPlatform(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px'
-              }}
-              disabled={loading}
-            >
-              <option value="">选择平台...</option>
-              {userPlatforms?.map((platform: string, index: number) => (
-                <option key={index} value={platform}>
-                  {platform}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedPlatform && encryptedPassword && (
-            <div style={{ marginBottom: '15px' }}>
-              <button
-                onClick={handleDecrypt}
-                disabled={loading || !isInitialized}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: loading || !isInitialized ? '#ccc' : '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: loading || !isInitialized ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {loading ? '解密中...' : !isInitialized ? '需要初始化 FHE' : '解密密码'}
-              </button>
-            </div>
-          )}
-
-          {decryptedPassword && (
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>
-                解密后的密码:
-              </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <input
-                  type="text"
-                  value={decryptedPassword}
-                  readOnly
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    backgroundColor: '#f8f9fa'
-                  }}
-                />
-                <button
-                  onClick={handleCopyPassword}
-                  style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  复制
-                </button>
-              </div>
-            </div>
-          )}
-
-          {userPlatforms && userPlatforms.length === 0 && (
+          {platformPasswords.length === 0 ? (
             <p style={{ color: '#666', textAlign: 'center' }}>
               暂无存储的密码
             </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {platformPasswords.map((platformData, index) => (
+                <div 
+                  key={index}
+                  style={{
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    padding: '15px',
+                    backgroundColor: '#f9f9f9'
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '10px'
+                  }}>
+                    <h3 style={{ 
+                      margin: 0, 
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      color: '#333'
+                    }}>
+                      {platformData.platform}
+                    </h3>
+                    <button
+                      onClick={() => handleDecrypt(platformData.platform)}
+                      disabled={platformData.isDecrypting || !isInitialized || loading}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: platformData.isDecrypting || !isInitialized || loading ? '#ccc' : '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: platformData.isDecrypting || !isInitialized || loading ? 'not-allowed' : 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      {platformData.isDecrypting ? '解密中...' : !isInitialized ? '需要初始化' : '解密'}
+                    </button>
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '10px'
+                  }}>
+                    <input
+                      type="text"
+                      value={platformData.decryptedPassword || '***********'}
+                      readOnly
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                        backgroundColor: platformData.decryptedPassword ? '#e8f5e8' : '#f5f5f5',
+                        color: platformData.decryptedPassword ? '#333' : '#666',
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                    {platformData.decryptedPassword && (
+                      <button
+                        onClick={() => handleCopyPassword(platformData.decryptedPassword!)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        复制
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}
