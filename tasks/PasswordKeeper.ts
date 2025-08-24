@@ -24,7 +24,7 @@ task("password-keeper:store")
   .addParam("password", "The password to store (max 20 characters)")
   .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm, deployments }) {
     const { platform, password } = taskArguments;
-    
+    await fhevm.initializeCLIApi()
     // Get contract address from deployments
     const deployment = await deployments.get("PasswordKeeper");
     const contractAddress = deployment.address;
@@ -100,10 +100,11 @@ task("password-keeper:update")
   });
 
 task("password-keeper:get")
-  .setDescription("Get an encrypted password for a platform")
+  .setDescription("Get and decrypt a password for a platform")
   .addParam("platform", "The platform name")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments, fhevm }) {
     const { platform } = taskArguments;
+    await fhevm.initializeCLIApi();
     
     // Get contract address from deployments
     const deployment = await deployments.get("PasswordKeeper");
@@ -112,17 +113,30 @@ task("password-keeper:get")
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    console.log(`Getting encrypted password for platform: ${platform}`);
+    console.log(`Getting and decrypting password for platform: ${platform}`);
     
     try {
-      const encryptedPassword = await contract.connect(signer).getPassword(platform);
-      console.log(`Encrypted password handle: ${encryptedPassword}`);
-      console.log("Note: This is the encrypted handle. To decrypt, you need to use the relayer SDK.");
+      const encryptedPasswordHandle = await contract.getPassword(signer.address, platform);
+
+      console.log(`Encrypted password handle: ${encryptedPasswordHandle}`);
       
-      const timestamp = await contract.connect(signer).getPasswordTimestamp(platform);
+      // Decrypt the password using fhevm
+      console.log("Decrypting password...");
+      const decryptedAddress = await fhevm.userDecryptEaddress(
+        encryptedPasswordHandle,
+        contractAddress,
+        signer
+      );
+      
+      // Convert the decrypted address back to password string
+      const password = PasswordConverter.addressToString(decryptedAddress);
+      console.log(`Decrypted password: ${password}`);
+      
+      const timestamp = await contract.getPasswordTimestamp(signer.address, platform);
       console.log(`Password was stored/updated at: ${new Date(Number(timestamp) * 1000).toISOString()}`);
-    } catch {
-      console.log("Password not found for this platform.");
+    } catch (error) {
+      console.log("Password not found for this platform or decryption failed.");
+      console.error(error);
     }
   });
 
@@ -139,7 +153,7 @@ task("password-keeper:has")
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
     
-    const hasPassword = await contract.connect(signer).hasPassword(platform);
+    const hasPassword = await contract.hasPassword(signer.address, platform);
     console.log(`Password exists for ${platform}: ${hasPassword}`);
   });
 
@@ -155,8 +169,8 @@ task("password-keeper:list")
     
     console.log(`Listing platforms for user: ${signer.address}`);
     
-    const platforms = await contract.connect(signer).getUserPlatforms();
-    const platformCount = await contract.connect(signer).getPlatformCount();
+    const platforms = await contract.getUserPlatforms(signer.address);
+    const platformCount = await contract.getPlatformCount(signer.address);
     
     console.log(`Total platforms: ${platformCount}`);
     
@@ -165,7 +179,7 @@ task("password-keeper:list")
     } else {
       console.log("Platforms:");
       for (let i = 0; i < platforms.length; i++) {
-        const timestamp = await contract.connect(signer).getPasswordTimestamp(platforms[i]);
+        const timestamp = await contract.getPasswordTimestamp(signer.address, platforms[i]);
         console.log(`  ${i + 1}. ${platforms[i]} (stored: ${new Date(Number(timestamp) * 1000).toISOString()})`);
       }
     }
@@ -262,13 +276,13 @@ task("password-keeper:demo")
     }
     
     console.log("\n📋 Listing all stored passwords...");
-    const storedPlatforms = await contract.connect(signer).getUserPlatforms();
-    const platformCount = await contract.connect(signer).getPlatformCount();
+    const storedPlatforms = await contract.getUserPlatforms(signer.address);
+    const platformCount = await contract.getPlatformCount(signer.address);
     
     console.log(`Total platforms: ${platformCount}`);
     for (const platform of storedPlatforms) {
-      const hasPassword = await contract.connect(signer).hasPassword(platform);
-      const timestamp = await contract.connect(signer).getPasswordTimestamp(platform);
+      const hasPassword = await contract.hasPassword(signer.address, platform);
+      const timestamp = await contract.getPasswordTimestamp(signer.address, platform);
       console.log(`  ✓ ${platform} (stored: ${new Date(Number(timestamp) * 1000).toISOString()}, exists: ${hasPassword})`);
     }
     
@@ -293,12 +307,12 @@ task("password-keeper:demo")
     console.log("✅ Deleted password for twitter");
     
     console.log("\n📋 Final platform list...");
-    const finalPlatforms = await contract.connect(signer).getUserPlatforms();
-    const finalCount = await contract.connect(signer).getPlatformCount();
+    const finalPlatforms = await contract.getUserPlatforms(signer.address);
+    const finalCount = await contract.getPlatformCount(signer.address);
     
     console.log(`Total platforms: ${finalCount}`);
     for (const platform of finalPlatforms) {
-      const timestamp = await contract.connect(signer).getPasswordTimestamp(platform);
+      const timestamp = await contract.getPasswordTimestamp(signer.address, platform);
       console.log(`  ✓ ${platform} (updated: ${new Date(Number(timestamp) * 1000).toISOString()})`);
     }
     

@@ -14,5 +14,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   console.log(`PasswordKeeper contract: `, deployed.address);
 };
 export default func;
-func.id = "deploy_fheCounter"; // id required to prevent reexecution
-func.tags = ["FHECounter"];
+func.id = "deploy_passwordKeeper"; // id required to prevent reexecution
+func.tags = ["PasswordKeeper"];
