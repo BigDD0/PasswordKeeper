@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAccount, useContractRead, useSigner } from 'wagmi';
+import { useAccount, useReadContract } from 'wagmi';
+import { useEthersSigner } from '../hooks/useEthersSigner';
 import { useFhe } from '../hooks/useFhe';
 import { PasswordConverter } from '../utils/passwordConverter';
 import { CONTRACT_CONFIG } from '../config/contracts';
@@ -11,23 +12,27 @@ export const PasswordRetrieval: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const { address } = useAccount();
-  const { data: signer } = useSigner();
+  const signer = useEthersSigner();
   const { decryptData, isLoading: fheLoading } = useFhe();
 
   // 获取用户的平台列表
-  const { data: userPlatforms, refetch: refetchPlatforms } = useContractRead({
+  const { data: userPlatforms, refetch: refetchPlatforms } = useReadContract({
     ...CONTRACT_CONFIG,
     functionName: 'getUserPlatforms',
-    args: [address],
-    enabled: !!address,
+    args: [address as `0x${string}`],
+    query: {
+      enabled: !!address,
+    }
   });
 
   // 获取选中平台的加密密码
-  const { data: encryptedPassword, refetch: refetchPassword } = useContractRead({
+  const { data: encryptedPassword, refetch: refetchPassword } = useReadContract({
     ...CONTRACT_CONFIG,
     functionName: 'getPassword',
-    args: [address, selectedPlatform],
-    enabled: !!address && !!selectedPlatform,
+    args: [address as `0x${string}`, selectedPlatform],
+    query: {
+      enabled: !!address && !!selectedPlatform,
+    }
   });
 
   useEffect(() => {

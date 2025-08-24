@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { WagmiConfig } from 'wagmi';
+import { WagmiProvider } from 'wagmi';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 
-import { config, chains } from './config/wagmi';
+import { config } from './config/wagmi';
 import { PasswordStorage } from './components/PasswordStorage';
 import { PasswordRetrieval } from './components/PasswordRetrieval';
 
@@ -148,13 +148,13 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <WagmiConfig config={config}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider chains={chains}>
+        <RainbowKitProvider>
           <AppContent />
         </RainbowKitProvider>
       </QueryClientProvider>
-    </WagmiConfig>
+    </WagmiProvider>
   );
 }
 

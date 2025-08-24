@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useAccount, useContractWrite, useWaitForTransaction } from 'wagmi';
+import React, { useState, useEffect } from 'react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useFhe } from '../hooks/useFhe';
 import { PasswordConverter } from '../utils/passwordConverter';
 import { CONTRACT_CONFIG } from '../config/contracts';
@@ -13,24 +13,21 @@ export const PasswordStorage: React.FC = () => {
   const { address } = useAccount();
   const { encryptAddress, isLoading: fheLoading } = useFhe();
 
-  const { data, write, isLoading: contractLoading } = useContractWrite({
-    ...CONTRACT_CONFIG,
-    functionName: 'storePassword',
+  const { data: hash, writeContract, isPending: contractLoading } = useWriteContract();
+
+  const { isLoading: transactionLoading } = useWaitForTransactionReceipt({
+    hash,
   });
 
-  const { isLoading: transactionLoading } = useWaitForTransaction({
-    hash: data?.hash,
-    onSuccess: () => {
+  // Handle transaction success/failure
+  useEffect(() => {
+    if (hash && !transactionLoading && !isLoading) {
       setMessage('密码存储成功！');
       setPlatform('');
       setPassword('');
       setIsLoading(false);
-    },
-    onError: () => {
-      setMessage('存储失败，请重试');
-      setIsLoading(false);
     }
-  });
+  }, [hash, transactionLoading, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,8 +65,10 @@ export const PasswordStorage: React.FC = () => {
       );
 
       // 3. 调用合约存储加密后的地址
-      write({
-        args: [platform, encryptedHandle, inputProof],
+      writeContract({
+        ...CONTRACT_CONFIG,
+        functionName: 'storePassword',
+        args: [platform, encryptedHandle as `0x${string}`, inputProof as `0x${string}`],
       });
 
     } catch (error: any) {
