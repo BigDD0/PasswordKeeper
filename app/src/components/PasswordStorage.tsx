@@ -170,14 +170,14 @@ export const PasswordStorage: React.FC = () => {
 
         <div style={{ marginBottom: '15px' }}>
           <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
-            密码 (最大20字符):
+            Password (max 20 characters):
           </label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="输入密码"
+            placeholder="Enter password"
             maxLength={20}
             style={{
               width: '100%',
@@ -188,7 +188,7 @@ export const PasswordStorage: React.FC = () => {
             disabled={loading}
           />
           <small style={{ color: '#666' }}>
-            {password.length}/20 字符
+            {password.length}/20 characters
           </small>
         </div>
 
@@ -205,7 +205,7 @@ export const PasswordStorage: React.FC = () => {
             cursor: loading || !isInitialized ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? '处理中...' : !isInitialized ? '需要初始化 FHE' : '存储密码'}
+          {loading ? 'Processing...' : !isInitialized ? 'FHE Initialization Required' : 'Store Password'}
         </button>
       </form>
 
@@ -213,10 +213,10 @@ export const PasswordStorage: React.FC = () => {
         <div style={{
           marginTop: '15px',
           padding: '10px',
-          backgroundColor: message.includes('成功') ? '#d4edda' : '#f8d7da',
-          border: `1px solid ${message.includes('成功') ? '#c3e6cb' : '#f5c6cb'}`,
+          backgroundColor: message.includes('success') ? '#d4edda' : '#f8d7da',
+          border: `1px solid ${message.includes('success') ? '#c3e6cb' : '#f5c6cb'}`,
           borderRadius: '4px',
-          color: message.includes('成功') ? '#155724' : '#721c24'
+          color: message.includes('success') ? '#155724' : '#721c24'
         }}>
           {message}
         </div>

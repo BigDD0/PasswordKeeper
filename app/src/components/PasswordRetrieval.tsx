@@ -56,12 +56,12 @@ export const PasswordRetrieval: React.FC = () => {
 
   const handleDecrypt = async (platform: string) => {
     if (!address || !signer) {
-      setMessage('缺少必要信息');
+      setMessage('Missing required information');
       return;
     }
 
     if (!isInitialized) {
-      setMessage('请先初始化 FHE');
+      setMessage('Please initialize FHE first');
       return;
     }
 
@@ -75,7 +75,7 @@ export const PasswordRetrieval: React.FC = () => {
     );
 
     try {
-      setMessage('正在解密...');
+      setMessage('Decrypting...');
 
       // 1. 使用 viem/wagmi 直接调用合约获取加密密码
       const { readContract } = await import('viem/actions');
@@ -116,10 +116,10 @@ export const PasswordRetrieval: React.FC = () => {
         )
       );
 
-      setMessage('解密成功！');
+      setMessage('Decryption successful!');
     } catch (error: any) {
       console.error('Decryption error:', error);
-      setMessage(error.message || '解密失败');
+      setMessage(error.message || 'Decryption failed');
       
       // 重置特定平台的解密状态
       setPlatformPasswords(prev => 
@@ -134,22 +134,22 @@ export const PasswordRetrieval: React.FC = () => {
 
   const handleCopyPassword = (password: string) => {
     navigator.clipboard.writeText(password);
-    setMessage('密码已复制到剪贴板');
+    setMessage('Password copied to clipboard');
   };
 
   const loading = fheLoading;
 
   return (
     <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px' }}>
-      <h2>获取密码</h2>
+      <h2>Retrieve Password</h2>
 
       {!address ? (
-        <p>请先连接钱包</p>
+        <p>Please connect your wallet first</p>
       ) : (
         <>
           {platformPasswords.length === 0 ? (
             <p style={{ color: '#666', textAlign: 'center' }}>
-              暂无存储的密码
+              No stored passwords
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -190,7 +190,7 @@ export const PasswordRetrieval: React.FC = () => {
                         fontSize: '12px'
                       }}
                     >
-                      {platformData.isDecrypting ? '解密中...' : !isInitialized ? '需要初始化' : '解密'}
+                      {platformData.isDecrypting ? 'Decrypting...' : !isInitialized ? 'Init Required' : 'Decrypt'}
                     </button>
                   </div>
                   
@@ -226,7 +226,7 @@ export const PasswordRetrieval: React.FC = () => {
                           fontSize: '12px'
                         }}
                       >
-                        复制
+                        Copy
                       </button>
                     )}
                   </div>
@@ -241,10 +241,10 @@ export const PasswordRetrieval: React.FC = () => {
         <div style={{
           marginTop: '15px',
           padding: '10px',
-          backgroundColor: message.includes('成功') ? '#d4edda' : '#f8d7da',
-          border: `1px solid ${message.includes('成功') ? '#c3e6cb' : '#f5c6cb'}`,
+          backgroundColor: message.includes('successful') || message.includes('copied') ? '#d4edda' : '#f8d7da',
+          border: `1px solid ${message.includes('successful') || message.includes('copied') ? '#c3e6cb' : '#f5c6cb'}`,
           borderRadius: '4px',
-          color: message.includes('成功') ? '#155724' : '#721c24'
+          color: message.includes('successful') || message.includes('copied') ? '#155724' : '#721c24'
         }}>
           {message}
         </div>
