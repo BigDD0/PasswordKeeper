@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { useFhe } from '../hooks/useFhe';
+import { useFhe } from '../contexts/FheContext';
 import { PasswordConverter } from '../utils/passwordConverter';
 import { CONTRACT_CONFIG } from '../config/contracts';
 
@@ -11,7 +11,7 @@ export const PasswordStorage: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const { address } = useAccount();
-  const { encryptAddress, isLoading: fheLoading } = useFhe();
+  const { encryptAddress, isLoading: fheLoading, isInitialized } = useFhe();
 
   const { data: hash, writeContract, isPending: contractLoading } = useWriteContract();
 
@@ -34,6 +34,11 @@ export const PasswordStorage: React.FC = () => {
     
     if (!address) {
       setMessage('请先连接钱包');
+      return;
+    }
+
+    if (!isInitialized) {
+      setMessage('请先初始化 FHE');
       return;
     }
 
@@ -132,18 +137,18 @@ export const PasswordStorage: React.FC = () => {
 
         <button
           type="submit"
-          disabled={loading || !address}
+          disabled={loading || !address || !isInitialized}
           style={{
             width: '100%',
             padding: '10px',
-            backgroundColor: loading ? '#ccc' : '#007bff',
+            backgroundColor: loading || !isInitialized ? '#ccc' : '#007bff',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
+            cursor: loading || !isInitialized ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? '处理中...' : '存储密码'}
+          {loading ? '处理中...' : !isInitialized ? '需要初始化 FHE' : '存储密码'}
         </button>
       </form>
 

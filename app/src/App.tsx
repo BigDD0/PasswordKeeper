@@ -9,12 +9,14 @@ import { useAccount } from 'wagmi';
 import { config } from './config/wagmi';
 import { PasswordStorage } from './components/PasswordStorage';
 import { PasswordRetrieval } from './components/PasswordRetrieval';
+import { FheProvider, useFhe } from './contexts/FheContext';
 
 const queryClient = new QueryClient();
 
 const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'store' | 'retrieve'>('store');
   const { isConnected } = useAccount();
+  const { isInitialized, isLoading, error, initFhe } = useFhe();
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
@@ -34,9 +36,56 @@ const AppContent: React.FC = () => {
           padding: '0 2rem'
         }}>
           <h1 style={{ margin: 0, color: '#333' }}>Password Keeper</h1>
-          <ConnectButton />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {!isInitialized && (
+              <button
+                onClick={initFhe}
+                disabled={isLoading}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: isLoading ? '#ccc' : '#28a745',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px'
+                }}
+              >
+                {isLoading ? 'Initializing FHE...' : 'Initialize FHE'}
+              </button>
+            )}
+            {isInitialized && (
+              <span style={{
+                padding: '8px 16px',
+                backgroundColor: '#28a745',
+                color: '#fff',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}>
+                FHE Ready
+              </span>
+            )}
+            <ConnectButton />
+          </div>
         </div>
       </div>
+
+      {/* FHE Error Display */}
+      {error && (
+        <div style={{
+          maxWidth: '800px',
+          margin: '0 auto 2rem',
+          padding: '1rem 2rem',
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          borderRadius: '8px',
+          border: '1px solid #f5c6cb'
+        }}>
+          <strong>FHE Error:</strong> {error}
+        </div>
+      )}
 
       {/* Main Content */}
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 2rem' }}>
@@ -151,7 +200,9 @@ function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <AppContent />
+          <FheProvider>
+            <AppContent />
+          </FheProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

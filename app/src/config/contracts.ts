@@ -1,7 +1,7 @@
 import { PASSWORDKEEPER_ABI } from '../types/contracts';
 
-// Sepolia 测试网合约地址 - 需要从部署后获取
-export const PASSWORDKEEPER_ADDRESS = '0x0000000000000000000000000000000000000000' as const; // 部署后填入实际地址
+// Sepolia 测试网合约地址
+export const PASSWORDKEEPER_ADDRESS = '0x3d3F5c6fb1F684b9E95cCe2304A6d25316452Fa2' as const;
 
 export const CONTRACT_CONFIG = {
   address: PASSWORDKEEPER_ADDRESS,

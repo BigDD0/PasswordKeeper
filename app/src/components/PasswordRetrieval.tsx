@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { useEthersSigner } from '../hooks/useEthersSigner';
-import { useFhe } from '../hooks/useFhe';
+import { useFhe } from '../contexts/FheContext';
 import { PasswordConverter } from '../utils/passwordConverter';
 import { CONTRACT_CONFIG } from '../config/contracts';
 
@@ -13,7 +13,7 @@ export const PasswordRetrieval: React.FC = () => {
 
   const { address } = useAccount();
   const signer = useEthersSigner();
-  const { decryptData, isLoading: fheLoading } = useFhe();
+  const { decryptData, isLoading: fheLoading, isInitialized } = useFhe();
 
   // 获取用户的平台列表
   const { data: userPlatforms, refetch: refetchPlatforms } = useReadContract({
@@ -55,6 +55,11 @@ export const PasswordRetrieval: React.FC = () => {
   const handleDecrypt = async () => {
     if (!address || !signer || !encryptedPassword || !selectedPlatform) {
       setMessage('缺少必要信息');
+      return;
+    }
+
+    if (!isInitialized) {
+      setMessage('请先初始化 FHE');
       return;
     }
 
@@ -129,18 +134,18 @@ export const PasswordRetrieval: React.FC = () => {
             <div style={{ marginBottom: '15px' }}>
               <button
                 onClick={handleDecrypt}
-                disabled={loading}
+                disabled={loading || !isInitialized}
                 style={{
                   width: '100%',
                   padding: '10px',
-                  backgroundColor: loading ? '#ccc' : '#28a745',
+                  backgroundColor: loading || !isInitialized ? '#ccc' : '#28a745',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer'
+                  cursor: loading || !isInitialized ? 'not-allowed' : 'pointer'
                 }}
               >
-                {loading ? '解密中...' : '解密密码'}
+                {loading ? '解密中...' : !isInitialized ? '需要初始化 FHE' : '解密密码'}
               </button>
             </div>
           )}
