@@ -160,10 +160,10 @@ src/
 
 Visit [Sepolia Faucet](https://sepoliafaucet.com/) to get testnet ETH.
 
-## 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-## 许可证
+## License
 
-本项目采用 BSD-3-Clause-Clear 许可证。
+This project is licensed under the BSD-3-Clause-Clear License.
