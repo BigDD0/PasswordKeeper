@@ -4,7 +4,7 @@ import { PasswordConverter } from "../utils/passwordConverter";
 
 task("password-keeper:deploy")
   .setDescription("Deploy the PasswordKeeper contract")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+  .setAction(async function (_, { ethers, deployments }) {
     const { deploy } = deployments;
     const [ deployer ] = await ethers.getSigners();
     
@@ -20,11 +20,14 @@ task("password-keeper:deploy")
 
 task("password-keeper:store")
   .setDescription("Store a password for a platform")
-  .addParam("contract", "The deployed contract address")
   .addParam("platform", "The platform name")
   .addParam("password", "The password to store (max 20 characters)")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm }) {
-    const { contract: contractAddress, platform, password } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm, deployments }) {
+    const { platform, password } = taskArguments;
+    
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     if (password.length > 20) {
       throw new Error("Password cannot be longer than 20 characters");
@@ -53,16 +56,19 @@ task("password-keeper:store")
     );
     
     const receipt = await tx.wait();
-    console.log(`Password stored successfully! Transaction hash: ${receipt.hash}`);
+    console.log(`Password stored successfully! Transaction hash: ${receipt?.hash}`);
   });
 
 task("password-keeper:update")
   .setDescription("Update a password for a platform")
-  .addParam("contract", "The deployed contract address")
   .addParam("platform", "The platform name")
   .addParam("password", "The new password (max 20 characters)")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm }) {
-    const { contract: contractAddress, platform, password } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm, deployments }) {
+    const { platform, password } = taskArguments;
+    
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     if (password.length > 20) {
       throw new Error("Password cannot be longer than 20 characters");
@@ -90,15 +96,18 @@ task("password-keeper:update")
     );
     
     const receipt = await tx.wait();
-    console.log(`Password updated successfully! Transaction hash: ${receipt.hash}`);
+    console.log(`Password updated successfully! Transaction hash: ${receipt?.hash}`);
   });
 
 task("password-keeper:get")
   .setDescription("Get an encrypted password for a platform")
-  .addParam("contract", "The deployed contract address")
   .addParam("platform", "The platform name")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, platform } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    const { platform } = taskArguments;
+    
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -119,10 +128,13 @@ task("password-keeper:get")
 
 task("password-keeper:has")
   .setDescription("Check if a password exists for a platform")
-  .addParam("contract", "The deployed contract address")
   .addParam("platform", "The platform name")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, platform } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    const { platform } = taskArguments;
+    
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -133,9 +145,10 @@ task("password-keeper:has")
 
 task("password-keeper:list")
   .setDescription("List all platforms for the current user")
-  .addParam("contract", "The deployed contract address")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress } = taskArguments;
+  .setAction(async function (_, { ethers, deployments }) {
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -160,10 +173,13 @@ task("password-keeper:list")
 
 task("password-keeper:delete")
   .setDescription("Delete a password for a platform")
-  .addParam("contract", "The deployed contract address")
   .addParam("platform", "The platform name")
-  .setAction(async function (taskArguments: TaskArguments, { ethers }) {
-    const { contract: contractAddress, platform } = taskArguments;
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+    const { platform } = taskArguments;
+    
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
@@ -173,7 +189,7 @@ task("password-keeper:delete")
     try {
       const tx = await contract.connect(signer).deletePassword(platform);
       const receipt = await tx.wait();
-      console.log(`Password deleted successfully! Transaction hash: ${receipt.hash}`);
+      console.log(`Password deleted successfully! Transaction hash: ${receipt?.hash}`);
     } catch (error) {
       console.log("Password not found for this platform or deletion failed.");
       console.error(error);
@@ -210,9 +226,10 @@ task("password-keeper:convert-to-string")
 
 task("password-keeper:demo")
   .setDescription("Run a demo of the PasswordKeeper functionality")
-  .addParam("contract", "The deployed contract address")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, fhevm }) {
-    const { contract: contractAddress } = taskArguments;
+  .setAction(async function (_, { ethers, fhevm, deployments }) {
+    // Get contract address from deployments
+    const deployment = await deployments.get("PasswordKeeper");
+    const contractAddress = deployment.address;
     
     const [signer] = await ethers.getSigners();
     const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
