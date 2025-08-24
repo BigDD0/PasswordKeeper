@@ -1,5 +1,6 @@
 import { task } from "hardhat/config";
 import type { TaskArguments } from "hardhat/types";
+import { FhevmType } from "@fhevm/hardhat-plugin";
 
 task("pk:store")
   .addOptionalParam("contract", "PasswordKeeper合约地址")
@@ -33,8 +34,16 @@ task("pk:store")
     
     // 创建加密输入
     const input = fhevm.createEncryptedInput(contractAddress, signer.address);
-    // 使用简单的哈希算法转换密码为数字
-    const passwordNum = password.length * 12345 + password.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+    
+    // 将密码字符串直接转换为数字进行FHE加密
+    // 1. 先转换为bytes32格式
+    const passwordBytes32 = ethers.encodeBytes32String(password);
+    console.log(`🔤 密码Bytes32格式: ${passwordBytes32}`);
+    
+    // 2. 将bytes32转换为数字 (取前4字节作为32位数字)
+    const passwordNum = parseInt(passwordBytes32.slice(2, 10), 16); // 取前4字节
+    console.log(`🔢 密码数字格式: ${passwordNum}`);
+    
     input.add32(passwordNum);
     const encryptedInput = await input.encrypt();
     
@@ -52,8 +61,10 @@ task("pk:store")
 task("pk:get")
   .addOptionalParam("contract", "PasswordKeeper合约地址")
   .addParam("platform", "平台名称")
-  .setDescription("从指定平台获取密码")
-  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments }) {
+  .setDescription("从指定平台获取并解密密码")
+  .setAction(async function (taskArguments: TaskArguments, { ethers, deployments, fhevm }) {
+    await fhevm.initializeCLIApi();
+    
     let contractAddress = taskArguments.contract;
     
     // 如果没有提供合约地址，从部署信息中获取
@@ -86,7 +97,43 @@ task("pk:get")
       
       // 获取加密密码
       const encryptedPassword = await passwordKeeper.getPassword(platform);
-      console.log(`✅ 获取到加密密码: ${encryptedPassword}`);
+      console.log(`✅ 获取到加密密码句柄: ${encryptedPassword}`);
+      
+      // 使用Hardhat FHEVM插件进行用户解密
+      console.log(`🔓 正在解密密码...`);
+      try {
+        const decryptedPasswordNum = await fhevm.userDecryptEuint(
+          FhevmType.euint32,
+          encryptedPassword,
+          contractAddress,
+          signer
+        );
+        console.log(`🔢 解密后的数字: ${decryptedPasswordNum}`);
+        
+        // 将数字转换回bytes32格式
+        const hexString = decryptedPasswordNum.toString(16).padStart(8, '0');
+        const paddedHex = '0x' + hexString.padEnd(64, '0'); // 填充到64位
+        console.log(`🔤 转换为Bytes32: ${paddedHex}`);
+        
+        // 从bytes32解码回原始字符串
+        try {
+          const originalPassword = ethers.decodeBytes32String(paddedHex);
+          console.log(`🔓 解密后的原始密码: "${originalPassword}"`);
+        } catch (decodeError) {
+          console.log(`⚠️  字符串解码失败，可能包含特殊字符`);
+          console.log(`🔢 原始数字值: ${decryptedPasswordNum}`);
+        }
+        
+      } catch (decryptError) {
+        console.error(`❌ 解密失败:`, decryptError);
+        console.log(`⚠️  可能的原因:`);
+        console.log(`   - 没有解密权限 (需要在合约中调用FHE.allow)`);
+        console.log(`   - FHEVM环境未正确配置`);
+        console.log(`   - 网络配置问题`);
+        
+        // 显示原始加密句柄信息
+        console.log(`ℹ️  加密句柄信息: ${encryptedPassword}`);
+      }
       
       // 获取时间戳
       const timestamp = await passwordKeeper.getPasswordTimestamp(platform);
