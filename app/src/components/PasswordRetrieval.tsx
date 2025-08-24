@@ -5,10 +5,15 @@ import { useFhe } from '../contexts/FheContext';
 import { PasswordConverter } from '../utils/passwordConverter';
 import { CONTRACT_CONFIG } from '../config/contracts';
 
+interface PlatformPassword {
+  platform: string;
+  encryptedPassword: string | null;
+  decryptedPassword: string | null;
+  isDecrypting: boolean;
+}
+
 export const PasswordRetrieval: React.FC = () => {
-  const [selectedPlatform, setSelectedPlatform] = useState('');
-  const [decryptedPassword, setDecryptedPassword] = useState('');
-  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [platformPasswords, setPlatformPasswords] = useState<PlatformPassword[]>([]);
   const [message, setMessage] = useState('');
 
   const { address } = useAccount();
@@ -25,32 +30,48 @@ export const PasswordRetrieval: React.FC = () => {
     }
   });
 
-  // 获取选中平台的加密密码
-  const { data: encryptedPassword, refetch: refetchPassword } = useReadContract({
-    ...CONTRACT_CONFIG,
-    functionName: 'getPassword',
-    args: [address as `0x${string}`, selectedPlatform],
-    query: {
-      enabled: !!address && !!selectedPlatform,
-    }
-  });
-
+  // 初始化平台密码列表
   useEffect(() => {
     if (address) {
       refetchPlatforms();
-      setSelectedPlatform('');
-      setDecryptedPassword('');
       setMessage('');
     }
   }, [address, refetchPlatforms]);
 
+  // 当获取到用户平台列表时，初始化状态
   useEffect(() => {
-    if (selectedPlatform) {
-      refetchPassword();
-      setDecryptedPassword('');
-      setMessage('');
+    if (userPlatforms && userPlatforms.length > 0) {
+      const initialPlatformPasswords = userPlatforms.map((platform: string) => ({
+        platform,
+        encryptedPassword: null,
+        decryptedPassword: null,
+        isDecrypting: false,
+      }));
+      setPlatformPasswords(initialPlatformPasswords);
+    } else {
+      setPlatformPasswords([]);
     }
-  }, [selectedPlatform, refetchPassword]);
+  }, [userPlatforms]);
+
+  // 获取特定平台的加密密码
+  const getEncryptedPasswordForPlatform = async (platform: string) => {
+    if (!address) return null;
+    
+    try {
+      // 直接调用合约获取加密密码
+      const contract = {
+        ...CONTRACT_CONFIG,
+        functionName: 'getPassword' as const,
+        args: [address as `0x${string}`, platform] as const,
+      };
+      
+      // 这里我们需要动态调用，但由于useReadContract的限制，我们改用不同的方法
+      return null; // 临时返回，下面会修改实现方式
+    } catch (error) {
+      console.error('Error fetching encrypted password:', error);
+      return null;
+    }
+  };
 
   const handleDecrypt = async () => {
     if (!address || !signer || !encryptedPassword || !selectedPlatform) {

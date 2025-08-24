@@ -12,7 +12,7 @@ interface FheContextType {
     address: string,
     contractAddress: string,
     userAddress: string
-  ) => Promise<{ encryptedHandle: string; inputProof: string }>;
+  ) => Promise<{ encryptedHandle: Uint8Array; inputProof: Uint8Array }>;
   decryptData: (
     ciphertextHandle: string,
     contractAddress: string,
@@ -64,19 +64,43 @@ export const FheProvider: React.FC<FheProviderProps> = ({ children }) => {
     address: string,
     contractAddress: string,
     userAddress: string
-  ): Promise<{ encryptedHandle: string; inputProof: string }> => {
+  ): Promise<{ encryptedHandle: Uint8Array; inputProof: Uint8Array }> => {
+    console.log('🔐 [FheContext] encryptAddress called with:', {
+      address,
+      contractAddress,
+      userAddress,
+      instanceExists: !!instance
+    });
+
     if (!instance) {
+      console.error('❌ [FheContext] FHE instance not initialized');
       throw new Error('FHE instance not initialized');
     }
 
-    const input = instance.createEncryptedInput(contractAddress, userAddress);
-    input.addAddress(address);
-    const result = await input.encrypt();
+    try {
+      console.log('🔄 [FheContext] Creating encrypted input...');
+      const input = instance.createEncryptedInput(contractAddress, userAddress);
+      
+      console.log('🔄 [FheContext] Adding address to input...');
+      input.addAddress(address);
+      
+      console.log('🔄 [FheContext] Encrypting input...');
+      const result = await input.encrypt();
+      
+      console.log('✅ [FheContext] Encryption completed:', {
+        handlesCount: result.handles.length,
+        firstHandle: result.handles[0],
+        inputProofLength: result.inputProof.length
+      });
 
-    return {
-      encryptedHandle: result.handles[0],
-      inputProof: result.inputProof,
-    };
+      return {
+        encryptedHandle: result.handles[0],
+        inputProof: result.inputProof,
+      };
+    } catch (error) {
+      console.error('❌ [FheContext] Error during encryption:', error);
+      throw error;
+    }
   };
 
   const decryptData = async (

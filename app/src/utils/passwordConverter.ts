@@ -64,6 +64,10 @@ export class PasswordConverter {
     return getAddress(hexlify(paddedBytes));
   }
   
+  static convertHex(handle:Uint8Array):`0x${string}`{
+    return `0x${Array.from(handle).map(b => b.toString(16).padStart(2, '0')).join('')}`;
+  }
+
   /**
    * Convert an EVM address back to a password string
    * @param address The address to convert back to password
