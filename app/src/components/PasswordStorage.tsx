@@ -191,10 +191,9 @@ export const PasswordStorage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
             maxLength={20}
-            className="tech-input"
+            className="tech-input monospace"
             disabled={loading}
             style={{ 
-              fontFamily: 'monospace',
               letterSpacing: '2px'
             }}
           />

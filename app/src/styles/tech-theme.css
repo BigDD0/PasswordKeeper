@@ -53,6 +53,9 @@ body {
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.6;
   overflow-x: hidden;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Animated Background */
@@ -259,8 +262,13 @@ body {
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 16px;
+  font-family: 'Inter', sans-serif;
   transition: all var(--transition-normal);
   backdrop-filter: blur(10px);
+}
+
+.tech-input.monospace {
+  font-family: 'Fira Code', 'Courier New', monospace;
 }
 
 .tech-input::placeholder {

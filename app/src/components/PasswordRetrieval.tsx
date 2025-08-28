@@ -246,10 +246,9 @@ export const PasswordRetrieval: React.FC = () => {
                       type={platformData.decryptedPassword ? 'text' : 'password'}
                       value={platformData.decryptedPassword || '●●●●●●●●●●●'}
                       readOnly
-                      className="tech-input"
+                      className="tech-input monospace"
                       style={{
                         flex: 1,
-                        fontFamily: 'monospace',
                         letterSpacing: platformData.decryptedPassword ? '2px' : '4px',
                         background: platformData.decryptedPassword 
                           ? 'rgba(0, 255, 127, 0.1)' 
