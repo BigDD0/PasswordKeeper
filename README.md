@@ -1,245 +1,548 @@
-# PasswordKeeper - 基于Zama FHE的密码管理器
+# PasswordKeeper
 
-一个使用Zama全同态加密(FHE)技术构建的去中心化密码管理器，可以安全地在区块链上存储和管理密码，同时保持密码的完全机密性。
+A decentralized password storage solution built with Zama's Fully Homomorphic Encryption (FHE) technology, enabling users to securely store their passwords on-chain while maintaining complete privacy and confidentiality.
 
-## 🌟 特性
+## Table of Contents
 
-- 🔐 **完全加密**: 使用Zama FHE技术，密码在链上始终保持加密状态
-- 🔒 **隐私保护**: 密码永不以明文形式暴露，包括在智能合约执行期间
-- 🏦 **去中心化**: 基于区块链，无需信任第三方服务商
-- 🚀 **用户友好**: 直观的Web界面和完整的命令行工具
-- 🔧 **开发者友好**: 完整的测试套件和详细的文档
-- 💼 **多平台支持**: 可为不同平台（GitHub、Google、Facebook等）存储密码
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Smart Contract](#smart-contract)
+- [Installation & Setup](#installation--setup)
+- [Deployment](#deployment)
+- [Usage](#usage)
+- [Frontend Application](#frontend-application)
+- [Testing](#testing)
+- [Security Considerations](#security-considerations)
+- [Contributing](#contributing)
+- [License](#license)
 
-## 🏗️ 项目结构
+## Overview
+
+PasswordKeeper is a revolutionary password storage application that leverages blockchain technology and Fully Homomorphic Encryption (FHE) to provide unprecedented security for password management. Unlike traditional password managers that store data on centralized servers, PasswordKeeper stores encrypted passwords directly on the blockchain, ensuring they remain private and secure while being decentralized.
+
+The application uses Zama's FHE technology to enable computations on encrypted data without ever revealing the actual passwords. Passwords are converted to EVM address format off-chain and then encrypted using FHE before being stored on-chain.
+
+## Features
+
+### Core Functionality
+- **Secure Password Storage**: Store passwords for different platforms with end-to-end encryption
+- **Encrypted Password Retrieval**: Retrieve and decrypt passwords securely using FHE
+- **Platform Management**: Manage multiple platforms with their respective passwords
+- **Password Updates**: Update existing passwords while maintaining security
+- **Password Deletion**: Securely delete passwords when no longer needed
+
+### Security Features
+- **Fully Homomorphic Encryption**: Powered by Zama's FHE technology
+- **On-chain Storage**: Passwords stored directly on blockchain for decentralization
+- **Access Control**: Built-in ACL (Access Control List) for permission management
+- **Off-chain Conversion**: Password-to-address conversion happens off-chain for privacy
+
+### User Experience
+- **Web Interface**: React-based frontend with modern UI
+- **Wallet Integration**: Connect with popular Ethereum wallets via RainbowKit
+- **Real-time Updates**: Instant feedback on all operations
+- **Platform Overview**: View all stored platforms at a glance
+
+## Architecture
 
 ```
-├── contracts/              # 智能合约
-│   ├── PasswordKeeper.sol  # 主密码管理合约
-│   └── FHECounter.sol      # 示例计数器合约
-├── deploy/                 # 部署脚本
-│   └── passwordkeeper.ts   # PasswordKeeper部署脚本
-├── tasks/                  # Hardhat任务脚本
-│   └── PasswordKeeper.ts   # 密码管理任务
-├── test/                   # 测试文件
-│   └── PasswordKeeper.ts   # 完整测试套件
-├── app/                    # 前端Web应用
-│   ├── index.html          # 主页面
-│   ├── app.js             # 应用逻辑
-│   └── README.md          # 前端使用说明
-└── docs/                   # 技术文档
-    ├── zama_llm.md        # Zama FHE开发指南
-    └── zama_doc_relayer.md # Relayer SDK文档
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Smart Contract │    │   Zama FHE      │
+│   (React)       │◄──►│   (Solidity)     │◄──►│   Infrastructure│
+│                 │    │                  │    │                 │
+│ - User Interface│    │ - Password Store │    │ - Encryption    │
+│ - Wallet Connect│    │ - Access Control │    │ - Decryption    │
+│ - FHE Operations│    │ - Platform Mgmt  │    │ - Key Management│
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                        │
+         └────────────────────────┼────────────────────────┘
+                                  │
+                        ┌──────────────────┐
+                        │   Password       │
+                        │   Converter      │
+                        │   (Off-chain)    │
+                        └──────────────────┘
 ```
 
-## 🚀 快速开始
+## Technology Stack
 
-### 环境要求
+### Smart Contract Development
+- **Hardhat**: Development environment and testing framework
+- **Solidity**: Smart contract programming language (v0.8.24)
+- **Zama FHE**: Fully Homomorphic Encryption library (`@fhevm/solidity ^0.7.0`)
+- **TypeScript**: Type-safe development experience
 
-- Node.js (版本 20+)
-- npm (版本 7+)
-- MetaMask浏览器扩展
+### Frontend Development
+- **React**: User interface library (v18.3.1)
+- **Vite**: Build tool and development server
+- **TypeScript**: Static type checking
+- **Wagmi**: React hooks for Ethereum
+- **RainbowKit**: Wallet connection interface
+- **Viem**: TypeScript interface for Ethereum
 
-### 安装依赖
+### FHE Integration
+- **Zama Relayer SDK**: Client-side FHE operations (`@zama-fhe/relayer-sdk ^0.1.2`)
+- **FHEVM**: Fully Homomorphic Encryption Virtual Machine
+- **Encrypted Types**: Type definitions for encrypted data
+
+### Development Tools
+- **ESLint**: Code linting and formatting
+- **Prettier**: Code formatting
+- **Mocha/Chai**: Testing framework
+- **Ethers.js**: Ethereum interaction library
+- **Hardhat Deploy**: Contract deployment management
+
+## Project Structure
+
+```
+PasswordKeeper/
+├── contracts/                  # Smart contracts
+│   ├── PasswordKeeper.sol     # Main password storage contract
+│   └── FHECounter.sol         # Example FHE contract
+├── deploy/                    # Deployment scripts
+│   └── deploy.ts
+├── test/                      # Contract tests
+│   ├── PasswordKeeper.ts
+│   └── FHECounter.ts
+├── tasks/                     # Hardhat tasks
+│   ├── PasswordKeeper.ts
+│   ├── FHECounter.ts
+│   └── accounts.ts
+├── utils/                     # Utility functions
+│   └── passwordConverter.ts   # Password-to-address conversion
+├── app/                       # Frontend application
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── contexts/         # React contexts
+│   │   ├── hooks/           # Custom hooks
+│   │   ├── utils/           # Frontend utilities
+│   │   └── types/           # TypeScript definitions
+│   ├── package.json
+│   └── vite.config.ts
+├── docs/                     # Documentation
+│   ├── zama_llm.md          # Zama FHE development guide
+│   └── zama_doc_relayer.md  # Relayer SDK documentation
+├── hardhat.config.ts        # Hardhat configuration
+├── package.json
+└── README.md
+```
+
+## Smart Contract
+
+### PasswordKeeper.sol
+
+The main contract provides the following functionality:
+
+#### Core Functions
+
+```solidity
+// Store an encrypted password for a platform
+function storePassword(
+    string calldata platform, 
+    externalEaddress encryptedPasswordAddress,
+    bytes calldata inputProof
+) external
+
+// Retrieve an encrypted password for a platform  
+function getPassword(address user, string calldata platform) 
+    external view returns (eaddress)
+
+// Update an existing password
+function updatePassword(
+    string calldata platform, 
+    externalEaddress encryptedPasswordAddress,
+    bytes calldata inputProof
+) external
+
+// Delete a password for a platform
+function deletePassword(string calldata platform) external
+```
+
+#### View Functions
+
+```solidity
+// Check if a password exists
+function hasPassword(address user, string calldata platform) 
+    external view returns (bool)
+
+// Get all platforms for a user
+function getUserPlatforms(address user) 
+    external view returns (string[] memory)
+
+// Get password creation timestamp
+function getPasswordTimestamp(address user, string calldata platform) 
+    external view returns (uint256)
+```
+
+#### Key Features
+
+- **Encrypted Storage**: All passwords stored as encrypted addresses using FHE
+- **Access Control**: Built-in ACL ensures only authorized users can access data
+- **Platform Management**: Track multiple platforms per user
+- **Event Logging**: Emit events for all password operations
+- **Validation**: Input validation for platform names and password constraints
+
+## Installation & Setup
+
+### Prerequisites
+
+- Node.js (v20 or higher)
+- npm (v7.0.0 or higher)
+- Git
+
+### Clone Repository
 
 ```bash
+git clone https://github.com/your-username/PasswordKeeper.git
+cd PasswordKeeper
+```
+
+### Install Dependencies
+
+```bash
+# Install root dependencies
 npm install
+
+# Install frontend dependencies
+cd app
+npm install
+cd ..
 ```
 
-### 编译合约
+### Environment Setup
+
+1. Create a `.env` file in the root directory:
 
 ```bash
-npm run compile
+# Private key for deployment (without 0x prefix)
+PRIVATE_KEY=your_private_key_here
+
+# Alchemy API key for Sepolia testnet
+ALCHEMY_API_KEY=your_alchemy_api_key
+
+# Etherscan API key for contract verification
+ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
-### 运行测试
+2. Set up Hardhat variables (optional):
 
 ```bash
-npm test
+npx hardhat vars setup
 ```
 
-### 本地部署
+## Deployment
+
+### Local Development
+
+1. **Start local Hardhat network:**
 
 ```bash
-# 启动本地Hardhat网络
 npx hardhat node
+```
 
-# 在另一个终端部署合约
+2. **Deploy contracts to local network:**
+
+```bash
 npx hardhat deploy --network localhost
 ```
 
-## 📖 使用指南
-
-### 1. 智能合约功能
-
-PasswordKeeper合约提供以下主要功能：
-
-- **存储密码**: 加密存储平台密码
-- **检索密码**: 获取加密密码（仅限所有者）
-- **删除密码**: 删除指定平台的密码
-- **批量操作**: 一次性存储多个密码
-- **平台管理**: 列出所有存储密码的平台
-
-### 2. 命令行工具
-
-#### 存储密码
-```bash
-npx hardhat pk:store --contract 0x... --platform "github" --password "mypassword123"
-```
-
-#### 获取密码列表
-```bash
-npx hardhat pk:list --contract 0x...
-```
-
-#### 查看密码（加密格式）
-```bash
-npx hardhat pk:get --contract 0x... --platform "github"
-```
-
-#### 删除密码
-```bash
-npx hardhat pk:delete --contract 0x... --platform "github"
-```
-
-#### 批量存储
-```bash
-npx hardhat pk:batch-store --contract 0x... --data '[{"platform":"github","password":"pass1"},{"platform":"google","password":"pass2"}]'
-```
-
-### 3. Web界面
-
-启动前端应用：
+3. **Start frontend development server:**
 
 ```bash
 cd app
-python3 -m http.server 8000
-# 或使用 npx serve .
+npm run dev
 ```
 
-访问 `http://localhost:8000` 使用Web界面进行：
-- 连接MetaMask钱包
-- 存储和管理密码
-- 查看密码统计信息
-- 测试格式转换功能
+### Sepolia Testnet Deployment
 
-## 🔧 技术架构
+1. **Ensure you have Sepolia ETH** in your wallet for gas fees
 
-### 核心技术栈
+2. **Deploy to Sepolia:**
 
-- **智能合约**: Solidity + Zama FHEVM
-- **开发框架**: Hardhat
-- **前端**: 原生JavaScript + Bootstrap 5
-- **区块链交互**: Ethers.js
-- **加密库**: Zama Relayer SDK
-
-### 加密机制
-
-1. **密码转换**: 密码字符串 → 数值哈希 → euint32加密类型
-2. **链上存储**: 使用FHE加密，永不解密
-3. **访问控制**: 基于Zama ACL系统，确保只有所有者可访问
-4. **隐私保护**: 所有操作都在加密状态下进行
-
-## 🧪 测试
-
-项目包含全面的测试套件：
-
-```bash
-# 运行所有测试
-npm test
-
-# 运行特定测试
-npx hardhat test test/PasswordKeeper.ts
-
-# 在Sepolia测试网运行测试
-npm run test:sepolia
-```
-
-测试涵盖：
-- 基本密码存储和检索
-- 多平台密码管理
-- 批量操作
-- 错误处理
-- 用户隔离
-- 时间戳功能
-
-## 🚀 部署
-
-### Sepolia测试网部署
-
-1. 配置环境变量：
-```bash
-# 设置助记词
-npx hardhat vars set MNEMONIC
-
-# 设置Infura API密钥
-npx hardhat vars set INFURA_API_KEY
-```
-
-2. 部署合约：
 ```bash
 npx hardhat deploy --network sepolia
 ```
 
-3. 验证部署：
+3. **Verify contract on Etherscan:**
+
 ```bash
-npx hardhat pk:info --contract <deployed_address> --network sepolia
+npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
 ```
 
-## 🔐 安全考虑
+### Production Deployment
 
-1. **私钥保护**: 永远不要在代码中暴露私钥
-2. **网络确认**: 在主网部署前充分测试
-3. **合约验证**: 确保使用正确的合约地址
-4. **访问控制**: 合约自动处理ACL权限管理
-5. **加密强度**: 使用Zama的生产级FHE加密
+For mainnet deployment, update the network configuration in `hardhat.config.ts` and deploy:
 
-## 📋 开发指南
-
-### 添加新功能
-
-1. 在合约中添加新函数
-2. 更新ABI定义
-3. 添加对应的测试用例
-4. 创建Hardhat任务脚本
-5. 更新前端界面
-
-### 自定义密码转换
-
-当前使用简单的哈希函数将密码转换为数值，可以根据需要实现更复杂的转换逻辑：
-
-```solidity
-// 在合约中可以添加更安全的转换函数
-function securePasswordHash(string memory password) public pure returns (uint32) {
-    // 实现更复杂的哈希逻辑
-}
+```bash
+npx hardhat deploy --network mainnet
 ```
 
-## 🤝 贡献指南
+## Usage
 
-1. Fork项目仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建Pull Request
+### Smart Contract Interaction
 
-## 📚 相关资源
+#### Using Hardhat Tasks
 
-- [Zama FHEVM文档](https://docs.zama.ai/)
-- [Hardhat文档](https://hardhat.org/docs)
-- [Zama社区论坛](https://community.zama.ai/)
-- [FHEVM GitHub](https://github.com/zama-ai/fhevm)
+The project includes custom Hardhat tasks for easy contract interaction:
 
-## 📄 许可证
+```bash
+# Store a password
+npx hardhat store-password --platform "Gmail" --password "mySecretPassword" --network sepolia
 
-本项目基于BSD-3-Clause-Clear许可证开源 - 查看 [LICENSE](LICENSE) 文件了解详情。
+# Get a password (returns encrypted handle)
+npx hardhat get-password --user "0x..." --platform "Gmail" --network sepolia
 
-## 🙏 致谢
+# Get user platforms
+npx hardhat get-user-platforms --user "0x..." --network sepolia
 
-- Zama团队提供的出色FHE技术
-- Hardhat团队的开发工具支持
-- 开源社区的贡献和反馈
+# Update a password
+npx hardhat update-password --platform "Gmail" --password "newPassword" --network sepolia
+
+# Delete a password
+npx hardhat delete-password --platform "Gmail" --network sepolia
+```
+
+#### Direct Contract Calls
+
+```typescript
+import { ethers } from "hardhat";
+
+const contract = await ethers.getContractAt("PasswordKeeper", contractAddress);
+
+// Store password
+const tx = await contract.storePassword("Gmail", encryptedAddress, inputProof);
+await tx.wait();
+
+// Get password
+const encryptedPassword = await contract.getPassword(userAddress, "Gmail");
+```
+
+### Password Conversion Utility
+
+The project includes a utility for converting passwords to addresses:
+
+```typescript
+import { PasswordConverter } from "./utils/passwordConverter";
+
+// Convert password to address
+const address = PasswordConverter.stringToAddress("myPassword123");
+
+// Convert address back to password
+const password = PasswordConverter.addressToString(address);
+
+// Test round-trip conversion
+const test = PasswordConverter.testConversion("myPassword123");
+console.log(test); // { original, address, convertedBack, isValid }
+```
+
+### FHE Operations
+
+Example of encrypting data for the contract:
+
+```typescript
+import { createInstance, SepoliaConfig } from "@zama-fhe/relayer-sdk";
+
+// Initialize FHE instance
+const instance = await createInstance(SepoliaConfig);
+
+// Create encrypted input
+const input = instance.createEncryptedInput(contractAddress, userAddress);
+const passwordAddress = PasswordConverter.stringToAddress("myPassword");
+input.addAddress(passwordAddress);
+
+// Encrypt and get proof
+const encryptedInput = await input.encrypt();
+
+// Use in contract call
+await contract.storePassword(
+    "Gmail",
+    encryptedInput.handles[0],
+    encryptedInput.inputProof
+);
+```
+
+## Frontend Application
+
+### Features
+
+- **Modern React Interface**: Built with React 18 and TypeScript
+- **Wallet Integration**: Connect with MetaMask, WalletConnect, and other wallets
+- **Real-time Operations**: Store, retrieve, update, and delete passwords
+- **Platform Management**: View and manage all stored platforms
+- **Responsive Design**: Works on desktop and mobile devices
+
+### Key Components
+
+#### PasswordStorage Component
+- Form for storing new passwords
+- Platform name input with validation
+- Password input with encryption
+- Real-time feedback on operations
+
+#### PasswordRetrieval Component
+- Retrieve and decrypt stored passwords
+- Platform selection dropdown
+- Secure password display
+- Copy to clipboard functionality
+
+#### FheContext
+- React context for FHE instance management
+- Handles initialization and configuration
+- Provides FHE operations to components
+
+### Running the Frontend
+
+```bash
+cd app
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
+### Building for Production
+
+```bash
+cd app
+npm run build
+```
+
+Built files will be in the `app/dist/` directory.
+
+## Testing
+
+### Smart Contract Tests
+
+The project includes comprehensive test suites:
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests on Sepolia testnet
+npm run test:sepolia
+
+# Run with gas reporting
+REPORT_GAS=true npm run test
+
+# Run with coverage
+npm run coverage
+```
+
+### Test Files
+
+- `test/PasswordKeeper.ts`: Comprehensive tests for the main contract
+- `test/FHECounter.ts`: Example FHE contract tests
+- `test/PasswordKeeper.Sepolia.ts`: Sepolia-specific tests
+
+### Example Test Cases
+
+```typescript
+describe("PasswordKeeper", function () {
+  it("should store and retrieve encrypted passwords", async function () {
+    // Store password
+    await passwordKeeper.storePassword("Gmail", encryptedAddress, inputProof);
+    
+    // Verify storage
+    expect(await passwordKeeper.hasPassword(owner.address, "Gmail")).to.be.true;
+    
+    // Retrieve password
+    const retrieved = await passwordKeeper.getPassword(owner.address, "Gmail");
+    expect(retrieved).to.equal(encryptedAddress);
+  });
+});
+```
+
+## Security Considerations
+
+### Smart Contract Security
+
+1. **Access Control**: Only users can access their own passwords
+2. **Input Validation**: All inputs are validated on-chain
+3. **Event Logging**: All operations are logged for transparency
+4. **FHE Security**: Passwords never exist in plaintext on-chain
+
+### Frontend Security
+
+1. **Secure Communication**: All FHE operations use encrypted channels
+2. **Wallet Security**: Private keys never leave the user's wallet
+3. **Input Sanitization**: All user inputs are sanitized
+4. **Memory Management**: Sensitive data cleared from memory
+
+### Best Practices
+
+1. **Password Limits**: Passwords limited to 20 characters as specified
+2. **Platform Validation**: Platform names are validated and limited
+3. **Error Handling**: Comprehensive error handling throughout
+4. **Audit Trail**: All operations are logged and traceable
+
+### Known Limitations
+
+1. **Password Length**: Maximum 20 characters due to address conversion
+2. **Gas Costs**: FHE operations have higher gas costs than regular transactions
+3. **Network Dependency**: Requires connection to Zama's FHE infrastructure
+
+## Contributing
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Make changes and test thoroughly
+4. Run linting: `npm run lint`
+5. Run tests: `npm run test`
+6. Commit changes: `git commit -m "Add new feature"`
+7. Push to branch: `git push origin feature/new-feature`
+8. Create a Pull Request
+
+### Code Standards
+
+- Follow TypeScript and Solidity best practices
+- Use ESLint and Prettier for code formatting
+- Write comprehensive tests for all features
+- Document all public functions and interfaces
+- Follow security best practices for smart contracts
+
+### Testing Guidelines
+
+- All new features must include tests
+- Aim for >90% test coverage
+- Test both success and failure scenarios
+- Include integration tests for complex features
+
+## License
+
+This project is licensed under the BSD-3-Clause-Clear License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Zama](https://zama.ai/) for the FHE technology and infrastructure
+- [Hardhat](https://hardhat.org/) for the excellent development framework
+- [React](https://reactjs.org/) and [Vite](https://vitejs.dev/) for frontend tools
+- [RainbowKit](https://rainbowkit.com/) for wallet integration
+
+## Support
+
+For questions, issues, or contributions:
+
+1. Check the [documentation](docs/)
+2. Search existing [issues](https://github.com/your-username/PasswordKeeper/issues)
+3. Create a new issue if needed
+4. Join the community discussions
+
+## Roadmap
+
+- [ ] Add support for password categories/folders
+- [ ] Implement password sharing capabilities
+- [ ] Add password strength validation
+- [ ] Create mobile application
+- [ ] Add password import/export functionality
+- [ ] Implement backup and recovery mechanisms
+- [ ] Add multi-signature wallet support
+- [ ] Create browser extension
 
 ---
 
-**⚠️ 免责声明**: 本项目仅供学习和演示目的。在生产环境中使用前，请进行充分的安全审计和测试。
+**⚠️ Security Notice**: This project is experimental and should be used with caution in production environments. Always audit smart contracts before mainnet deployment.
