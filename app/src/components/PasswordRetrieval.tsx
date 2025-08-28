@@ -140,112 +140,211 @@ export const PasswordRetrieval: React.FC = () => {
   const loading = fheLoading;
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px' }}>
-      <h2>Retrieve Password</h2>
+    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '2rem',
+        background: 'var(--gradient-secondary)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text'
+      }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          🔍 Quantum Vault Access
+        </h2>
+      </div>
 
       {!address ? (
-        <p>Please connect your wallet first</p>
+        <div className="tech-message warning" style={{ textAlign: 'center' }}>
+          <span>⚠</span>
+          Please connect your wallet to access secure vault
+        </div>
       ) : (
         <>
           {platformPasswords.length === 0 ? (
-            <p style={{ color: '#666', textAlign: 'center' }}>
-              No stored passwords
-            </p>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem',
+              background: 'rgba(168, 85, 247, 0.05)',
+              border: '1px dashed var(--neon-purple)',
+              borderRadius: '12px'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '1rem' }}>🔐</div>
+              <h3 style={{ color: 'var(--neon-purple)', marginBottom: '8px' }}>Vault Empty</h3>
+              <p style={{ color: 'var(--text-muted)' }}>
+                No encrypted passwords found in your quantum vault
+              </p>
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {platformPasswords.map((platformData, index) => (
                 <div 
                   key={index}
+                  className="glass-card"
                   style={{
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                    padding: '15px',
-                    backgroundColor: '#f9f9f9'
+                    padding: '20px',
+                    border: `1px solid ${platformData.decryptedPassword ? 'var(--neon-green)' : 'rgba(255,255,255,0.1)'}`,
+                    background: platformData.decryptedPassword 
+                      ? 'rgba(0, 255, 127, 0.05)' 
+                      : 'var(--bg-glass)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    marginBottom: '10px'
+                    marginBottom: '16px'
                   }}>
-                    <h3 style={{ 
-                      margin: 0, 
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: '#333'
-                    }}>
-                      {platformData.platform}
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: platformData.decryptedPassword ? 'var(--neon-green)' : 'var(--text-muted)',
+                        animation: platformData.isDecrypting ? 'pulse 2s infinite' : 'none'
+                      }}></div>
+                      <h3 style={{ 
+                        margin: 0, 
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        🏢 {platformData.platform}
+                      </h3>
+                    </div>
                     <button
                       onClick={() => handleDecrypt(platformData.platform)}
                       disabled={platformData.isDecrypting || !isInitialized || loading}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: platformData.isDecrypting || !isInitialized || loading ? '#ccc' : '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: platformData.isDecrypting || !isInitialized || loading ? 'not-allowed' : 'pointer',
-                        fontSize: '12px'
-                      }}
+                      className={`neon-button ${platformData.isDecrypting || !isInitialized || loading ? '' : 'success'}`}
+                      style={{ fontSize: '12px', padding: '8px 16px' }}
                     >
-                      {platformData.isDecrypting ? 'Decrypting...' : !isInitialized ? 'Init Required' : 'Decrypt'}
+                      {platformData.isDecrypting ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className="loading-spinner" style={{ width: '12px', height: '12px' }}></div>
+                          DECRYPTING...
+                        </div>
+                      ) : !isInitialized ? (
+                        '⚠ INIT REQUIRED'
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>🔓</span>
+                          DECRYPT
+                        </div>
+                      )}
                     </button>
                   </div>
                   
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
-                    gap: '10px'
+                    gap: '12px'
                   }}>
                     <input
-                      type="text"
-                      value={platformData.decryptedPassword || '***********'}
+                      type={platformData.decryptedPassword ? 'text' : 'password'}
+                      value={platformData.decryptedPassword || '●●●●●●●●●●●'}
                       readOnly
+                      className="tech-input"
                       style={{
                         flex: 1,
-                        padding: '8px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        backgroundColor: platformData.decryptedPassword ? '#e8f5e8' : '#f5f5f5',
-                        color: platformData.decryptedPassword ? '#333' : '#666',
-                        fontFamily: 'monospace'
+                        fontFamily: 'monospace',
+                        letterSpacing: platformData.decryptedPassword ? '2px' : '4px',
+                        background: platformData.decryptedPassword 
+                          ? 'rgba(0, 255, 127, 0.1)' 
+                          : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${platformData.decryptedPassword ? 'var(--neon-green)' : 'rgba(255,255,255,0.1)'}`,
+                        color: platformData.decryptedPassword ? 'var(--neon-green)' : 'var(--text-muted)',
+                        cursor: 'default'
                       }}
                     />
                     {platformData.decryptedPassword && (
                       <button
                         onClick={() => handleCopyPassword(platformData.decryptedPassword!)}
-                        style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#28a745',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
+                        className="neon-button"
+                        style={{ 
+                          padding: '12px',
+                          minWidth: '50px',
+                          borderColor: 'var(--neon-blue)',
+                          color: 'var(--neon-blue)'
                         }}
                       >
-                        Copy
+                        📋
                       </button>
+                    )}
+                  </div>
+
+                  {/* Security Status */}
+                  <div style={{ 
+                    marginTop: '12px',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span>
+                      🔒 FHE Protected | 🛡️ Quantum Secure
+                    </span>
+                    {platformData.decryptedPassword && (
+                      <span style={{ color: 'var(--neon-green)', fontWeight: '600' }}>
+                        ✅ DECRYPTED
+                      </span>
                     )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          {/* Usage Instructions */}
+          <div style={{
+            marginTop: '2rem',
+            padding: '16px',
+            background: 'rgba(168, 85, 247, 0.05)',
+            border: '1px solid rgba(168, 85, 247, 0.2)',
+            borderRadius: '8px'
+          }}>
+            <div style={{ 
+              fontSize: '14px', 
+              color: 'var(--neon-purple)', 
+              fontWeight: '600',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>💡</span>
+              Quantum Decryption Protocol
+            </div>
+            <ul style={{ 
+              fontSize: '12px', 
+              color: 'var(--text-secondary)', 
+              listStyle: 'none',
+              padding: 0,
+              margin: 0
+            }}>
+              <li style={{ marginBottom: '4px' }}>🔸 Click "DECRYPT" to unlock your stored password</li>
+              <li style={{ marginBottom: '4px' }}>🔸 FHE ensures your password never exists as plaintext on-chain</li>
+              <li style={{ marginBottom: '4px' }}>🔸 Use the copy button to securely transfer to clipboard</li>
+            </ul>
+          </div>
         </>
       )}
 
       {message && (
-        <div style={{
-          marginTop: '15px',
-          padding: '10px',
-          backgroundColor: message.includes('successful') || message.includes('copied') ? '#d4edda' : '#f8d7da',
-          border: `1px solid ${message.includes('successful') || message.includes('copied') ? '#c3e6cb' : '#f5c6cb'}`,
-          borderRadius: '4px',
-          color: message.includes('successful') || message.includes('copied') ? '#155724' : '#721c24'
-        }}>
+        <div 
+          className={`tech-message ${
+            message.includes('successful') || message.includes('copied') ? 'success' : 
+            message.includes('Decrypting') ? 'warning' : 'error'
+          }`}
+          style={{ marginTop: '24px' }}
+        >
+          <span style={{ fontSize: '16px' }}>
+            {message.includes('successful') || message.includes('copied') ? '✅' : 
+             message.includes('Decrypting') ? '🔄' : '❌'}
+          </span>
           {message}
         </div>
       )}

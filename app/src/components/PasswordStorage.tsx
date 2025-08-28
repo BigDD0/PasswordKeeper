@@ -143,84 +143,152 @@ export const PasswordStorage: React.FC = () => {
   const loading = isLoading || fheLoading || contractLoading || transactionLoading;
 
   return (
-    <div style={{ maxWidth: '400px', margin: '0 auto', padding: '20px' }}>
-      <h2>Store Password</h2>
+    <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '2rem',
+        background: 'var(--gradient-primary)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text'
+      }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          🔐 Secure Vault Storage
+        </h2>
+      </div>
       
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="platform" style={{ display: 'block', marginBottom: '5px' }}>
-            Platform Name:
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="form-group">
+          <label htmlFor="platform" className="tech-label">
+            🏢 Platform Identifier
           </label>
           <input
             type="text"
             id="platform"
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            placeholder="e.g: Github, Gmail"
+            placeholder="e.g: Github, Gmail, Netflix"
             maxLength={50}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
-            }}
+            className="tech-input"
             disabled={loading}
           />
+          <div className="form-help">
+            <span style={{ fontSize: '12px', color: 'var(--neon-blue)' }}>
+              ✓ Secure platform identification
+            </span>
+            <span>{platform.length}/50</span>
+          </div>
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
-            Password (max 20 characters):
+        <div className="form-group">
+          <label htmlFor="password" className="tech-label">
+            🔑 Encrypted Password
           </label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter password"
+            placeholder="Enter your password"
             maxLength={20}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
-            }}
+            className="tech-input"
             disabled={loading}
+            style={{ 
+              fontFamily: 'monospace',
+              letterSpacing: '2px'
+            }}
           />
-          <small style={{ color: '#666' }}>
-            {password.length}/20 characters
-          </small>
+          <div className="form-help">
+            <span style={{ 
+              fontSize: '12px', 
+              color: password.length > 15 ? 'var(--neon-orange)' : 'var(--neon-green)' 
+            }}>
+              {password.length <= 15 ? '✓ Optimal length' : '⚠ Near limit'}
+            </span>
+            <span style={{ 
+              fontWeight: '600',
+              color: password.length === 20 ? 'var(--neon-pink)' : 'var(--text-muted)'
+            }}>
+              {password.length}/20
+            </span>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={loading || !address || !isInitialized}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: loading || !isInitialized ? '#ccc' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading || !isInitialized ? 'not-allowed' : 'pointer'
+          className={`neon-button ${loading || !isInitialized ? '' : 'success'}`}
+          style={{ 
+            width: '100%', 
+            padding: '16px 24px',
+            fontSize: '16px',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          {loading ? 'Processing...' : !isInitialized ? 'FHE Initialization Required' : 'Store Password'}
+          {loading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+              <div className="loading-spinner"></div>
+              <span>Processing Encryption...</span>
+            </div>
+          ) : !isInitialized ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>⚠</span>
+              FHE Initialization Required
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <span>🚀</span>
+              Store in Quantum Vault
+            </div>
+          )}
         </button>
       </form>
 
       {message && (
-        <div style={{
-          marginTop: '15px',
-          padding: '10px',
-          backgroundColor: message.includes('success') ? '#d4edda' : '#f8d7da',
-          border: `1px solid ${message.includes('success') ? '#c3e6cb' : '#f5c6cb'}`,
-          borderRadius: '4px',
-          color: message.includes('success') ? '#155724' : '#721c24'
-        }}>
+        <div 
+          className={`tech-message ${message.includes('success') ? 'success' : 'error'}`}
+          style={{ marginTop: '24px' }}
+        >
+          <span style={{ fontSize: '16px' }}>
+            {message.includes('success') ? '✅' : '❌'}
+          </span>
           {message}
         </div>
       )}
+
+      {/* Security Info */}
+      <div style={{
+        marginTop: '2rem',
+        padding: '16px',
+        background: 'rgba(0, 212, 255, 0.05)',
+        border: '1px solid rgba(0, 212, 255, 0.2)',
+        borderRadius: '8px'
+      }}>
+        <div style={{ 
+          fontSize: '14px', 
+          color: 'var(--neon-blue)', 
+          fontWeight: '600',
+          marginBottom: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>🛡️</span>
+          Security Protocol Active
+        </div>
+        <ul style={{ 
+          fontSize: '12px', 
+          color: 'var(--text-secondary)', 
+          listStyle: 'none',
+          padding: 0,
+          margin: 0
+        }}>
+          <li style={{ marginBottom: '4px' }}>🔸 FHE encryption before blockchain storage</li>
+          <li style={{ marginBottom: '4px' }}>🔸 Zero-knowledge password protection</li>
+          <li style={{ marginBottom: '4px' }}>🔸 Quantum-resistant security algorithms</li>
+        </ul>
+      </div>
     </div>
   );
 };
