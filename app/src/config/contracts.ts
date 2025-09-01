@@ -1,4 +1,4 @@
-import { PASSWORDKEEPER_ABI } from '../types/contracts';
+import { PASSWORDKEEPER_ABI } from '../utils/contracts';
 
 // Sepolia 测试网合约地址
 export const PASSWORDKEEPER_ADDRESS = '0x3d3F5c6fb1F684b9E95cCe2304A6d25316452Fa2' as const;
